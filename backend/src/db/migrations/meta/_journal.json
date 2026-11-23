@@ -1,0 +1,167 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1740000000000,
+      "tag": "0000_init",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1761120000000,
+      "tag": "0001_ops_campaigns_scoring",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1761130000000,
+      "tag": "0002_membership_currency",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1761140000000,
+      "tag": "0003_drop_unused_feature_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1761150000000,
+      "tag": "0004_add_review_quota_and_merge_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1761160000000,
+      "tag": "0005_add_password_change_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1761170000000,
+      "tag": "0006_add_platform_admin",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1761180000000,
+      "tag": "0007_add_monitors_and_change_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1761190000000,
+      "tag": "0008_add_active_playbook_to_offers",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1761200000000,
+      "tag": "0009_add_opportunities_and_contacts",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1761210000000,
+      "tag": "0010_add_crm_mappings",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1761220000000,
+      "tag": "0011_add_crm_connections",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1761230000000,
+      "tag": "0012_add_access_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793697086913,
+      "tag": "0013_add_notification_reads",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793700000000,
+      "tag": "0014_add_account_why_now",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1793800000000,
+      "tag": "0015_add_workspace_deleted_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793900000000,
+      "tag": "0016_add_crm_imports",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794000000000,
+      "tag": "0017_crm_connection_per_workspace",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794100000000,
+      "tag": "0018_add_stakeholder_briefs",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794200000000,
+      "tag": "0019_add_offer_seller_website",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794300000000,
+      "tag": "0020_add_company_profile",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794400000000,
+      "tag": "0021_add_draft_contact_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794500000000,
+      "tag": "0022_add_tenant_deleted_at",
+      "breakpoints": true
+    }
+  ]
+}
