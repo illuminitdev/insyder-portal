@@ -17,6 +17,7 @@ import {
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
+import { useActiveInterval } from "../../hooks/useActiveInterval";
 import { usePortal } from "../../hooks/usePortal";
 import { useWorkspace } from "../../hooks/useWorkspace";
 import { listNotifications, markNotifications, type NotificationItem, type NotificationState } from "../../lib/api/notifications";
@@ -114,9 +115,8 @@ export function AttentionBell() {
 
   useEffect(() => {
     void load();
-    const t = setInterval(() => void load(), 60_000);
-    return () => clearInterval(t);
   }, [load]);
+  useActiveInterval(() => void load(), 60_000);
 
   return (
     <BellMenu

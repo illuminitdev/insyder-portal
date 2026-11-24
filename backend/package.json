@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n api,worker -c cyan,magenta \"npm:dev:api\" \"npm:worker\"",
+    "dev": "tsx watch src/dev.ts",
     "dev:api": "tsx watch src/index.ts",
     "worker": "tsx watch src/worker.ts",
     "build": "tsc",

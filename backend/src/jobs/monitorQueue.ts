@@ -1,8 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import { getDb } from "../db/client.js";
 import { monitors } from "../db/schema/index.js";
-import { findDueMonitors, isMonitorDue, runMonitorCheck } from "../services/monitors.js";
-import { getBoss } from "./queue.js";
+import { findDueMonitors, isMonitorDue, MONITOR_DUE_GRACE_HOURS, runMonitorCheck } from "../services/monitors.js";
+import { getBoss, wakeWorkers } from "./queue.js";
 
 export const JOB_MONITOR_CHECK = "monitor-check";
 
@@ -25,6 +25,7 @@ export async function enqueueDueMonitors() {
       expireInMinutes: 15,
     });
   }
+  wakeWorkers();
   return due.length;
 }
 
@@ -38,7 +39,7 @@ export async function handleMonitorCheck(job: MonitorCheckJob, attempt: { retryC
     .limit(1);
   // Removed, paused, or already checked by an earlier copy of this job: nothing to do
   if (!mon || mon.status !== "active") return;
-  if (attempt.retryCount === 0 && !isMonitorDue(mon)) return;
+  if (attempt.retryCount === 0 && !isMonitorDue(mon, Date.now(), MONITOR_DUE_GRACE_HOURS)) return;
 
   const result = await runMonitorCheck(job.workspaceId, job.monitorId);
   if (result.status === "provider_outage") {

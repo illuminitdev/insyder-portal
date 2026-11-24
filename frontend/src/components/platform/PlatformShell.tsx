@@ -24,6 +24,7 @@ import { LoadingState } from "@/components/common/LoadingState";
 import { AccountMenu } from "@/components/layout/AppShell";
 import { InsyderMark } from "@/components/common/InsyderLogo";
 import { PlatformBell } from "./PlatformBell";
+import { useActiveInterval } from "@/hooks/useActiveInterval";
 
 const NAV: Array<{ href: string; label: string; Icon: LucideIcon; exact?: boolean }> = [
   { href: "/platform", label: "Overview", Icon: LayoutDashboard, exact: true },
@@ -44,20 +45,19 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
   // Pending sign-up requests, shown as a count on the "Access requests" nav item
   const [pendingRequests, setPendingRequests] = useState(0);
 
+  const refreshPending = () =>
+    void listAccessRequests("pending")
+      .then((r) => setPendingRequests(r.counts.pending))
+      .catch(() => undefined);
+
   useEffect(() => {
     if (!user) return;
-    const refresh = () =>
-      void listAccessRequests("pending")
-        .then((r) => setPendingRequests(r.counts.pending))
-        .catch(() => undefined);
-    refresh();
-    const t = setInterval(refresh, 60_000);
-    window.addEventListener(ACCESS_REQUESTS_CHANGED, refresh);
-    return () => {
-      clearInterval(t);
-      window.removeEventListener(ACCESS_REQUESTS_CHANGED, refresh);
-    };
+    refreshPending();
+    window.addEventListener(ACCESS_REQUESTS_CHANGED, refreshPending);
+    return () => window.removeEventListener(ACCESS_REQUESTS_CHANGED, refreshPending);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+  useActiveInterval(refreshPending, 60_000, Boolean(user));
 
   useEffect(() => {
     me()

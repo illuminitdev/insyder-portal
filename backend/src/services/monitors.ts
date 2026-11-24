@@ -345,10 +345,20 @@ const SEARCH_TERMS: Record<string, string> = {
 
 const NO_COUNTS = { freshEventsCount: 0, skippedDuplicates: 0, skippedSuppressed: 0, evidenceAdded: 0 };
 
-/** True when the monitor's schedule says a check is due now. */
-export function isMonitorDue(mon: { lastAttemptAt: Date | null; cadenceHours: number }, now = Date.now()) {
+/**
+ * Monitors are checked once a day at a fixed time, so a run can start a few seconds before a full
+ * cadence has passed. The grace keeps a Daily monitor from slipping to every other day.
+ */
+export const MONITOR_DUE_GRACE_HOURS = 3;
+
+/** True when the monitor's schedule says a check is due now (optionally `graceHours` early). */
+export function isMonitorDue(
+  mon: { lastAttemptAt: Date | null; cadenceHours: number },
+  now = Date.now(),
+  graceHours = 0,
+) {
   const last = mon.lastAttemptAt ? new Date(mon.lastAttemptAt).getTime() : 0;
-  return now - last >= mon.cadenceHours * 3600 * 1000;
+  return now - last >= (mon.cadenceHours - graceHours) * 3600 * 1000;
 }
 
 /**
@@ -663,5 +673,5 @@ export async function findDueMonitors() {
   const db = getDb();
   const active = await db.select().from(monitors).where(eq(monitors.status, "active"));
   const now = Date.now();
-  return active.filter((m) => isMonitorDue(m, now));
+  return active.filter((m) => isMonitorDue(m, now, MONITOR_DUE_GRACE_HOURS));
 }

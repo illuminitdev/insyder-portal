@@ -4,7 +4,13 @@ import { startWorker } from "./jobs/startWorker.js";
 
 async function main() {
   const env = getEnv();
-  await startWorker({ pollingIntervalSeconds: env.WORKER_POLL_SECONDS });
+  // A standalone worker can't be woken by the API process, so it keeps polling at one rate
+  const poll = env.WORKER_POLL_SECONDS ?? 10;
+  await startWorker({
+    activePollSeconds: poll,
+    idlePollSeconds: poll,
+    monitorDailyTimeUtc: env.MONITOR_DAILY_TIME_UTC,
+  });
 }
 
 main().catch((err) => {

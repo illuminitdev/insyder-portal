@@ -1,4 +1,4 @@
-import { getBoss } from "./queue.js";
+import { getBoss, wakeWorkers } from "./queue.js";
 
 export const JOB_CRM_SYNC = "crm-sync";
 
@@ -14,4 +14,5 @@ export async function enqueueCrmSync(job: CrmSyncJob) {
     retryLimit: 0,
     expireInMinutes: 15,
   });
+  wakeWorkers();
 }

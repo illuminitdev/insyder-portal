@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Gauge, UserPlus, UserX, Users } from "lucide-react";
 import { BellMenu, type BellItem } from "@/components/layout/AttentionBell";
+import { useActiveInterval } from "@/hooks/useActiveInterval";
 import { ACCESS_REQUESTS_CHANGED, getPlatformOverview, listAccessRequests, listPlatformWorkspaces } from "@/lib/api/platform";
 
 /** Platform header bell: companies and workspaces that need the app owner's attention. */
@@ -50,17 +51,14 @@ export function PlatformBell() {
     setItems(next);
   }, []);
 
-  // Load once, then refresh every minute and when the panel opens
+  // Load once, then refresh every minute while the user is active, and when the panel opens
   useEffect(() => {
     void load();
-    const t = setInterval(() => void load(), 60_000);
     const onChange = () => void load();
     window.addEventListener(ACCESS_REQUESTS_CHANGED, onChange);
-    return () => {
-      clearInterval(t);
-      window.removeEventListener(ACCESS_REQUESTS_CHANGED, onChange);
-    };
+    return () => window.removeEventListener(ACCESS_REQUESTS_CHANGED, onChange);
   }, [load]);
+  useActiveInterval(() => void load(), 60_000);
 
   return <BellMenu storageKey="platform" items={items} onOpen={() => void load()} />;
 }

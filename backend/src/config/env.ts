@@ -18,8 +18,13 @@ const envSchema = z.object({
     .string()
     .optional()
     .transform((v) => v?.trim().toLowerCase() === "true"),
-  /** How often the worker checks for new jobs; pg-boss default (2s) when unset */
+  /**
+   * Fast worker poll rate (seconds) during the 30 min after job activity. Idle workers in the API
+   * process poll only every 3 h and are woken when a job is queued.
+   */
   WORKER_POLL_SECONDS: z.coerce.number().int().min(1).max(300).optional(),
+  /** "HH:MM" UTC time of the daily monitor run; default 03:30 UTC (9:00 AM India) */
+  MONITOR_DAILY_TIME_UTC: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
