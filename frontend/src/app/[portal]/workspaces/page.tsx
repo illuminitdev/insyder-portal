@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { PortalLink as Link } from "@/components/layout/PortalLink";
-import { Briefcase, CalendarDays, ChevronRight, CircleCheck, Layers, Plus, Trash2, Users, X } from "lucide-react";
+import { Briefcase, CalendarDays, ChevronRight, CircleCheck, Layers, Pencil, Plus, Trash2, Users, X } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { RequireCap } from "@/components/common/RequireCap";
 import { LoadingState } from "@/components/common/LoadingState";
@@ -19,10 +19,21 @@ import {
   createCompanyWorkspace,
   deleteCompanyWorkspace,
   listCompanyWorkspaces,
+  renameCompanyWorkspace,
   type CompanyWorkspace,
 } from "@/lib/api/companyWorkspaces";
 
-function WorkspaceCard({ w, current, onDelete }: { w: CompanyWorkspace; current: boolean; onDelete: () => void }) {
+function WorkspaceCard({
+  w,
+  current,
+  onRename,
+  onDelete,
+}: {
+  w: CompanyWorkspace;
+  current: boolean;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
   const roles = ROLE_ORDER.filter((r) => w.membersByRole[r]);
   const href = `/workspaces/detail?id=${w.id}`;
   return (
@@ -79,6 +90,17 @@ function WorkspaceCard({ w, current, onDelete }: { w: CompanyWorkspace; current:
           View users
           <ChevronRight size={15} className="transition-transform group-hover:translate-x-0.5" aria-hidden />
         </Link>
+        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onRename}
+          title={`Rename ${w.name}`}
+          aria-label={`Rename ${w.name}`}
+          className="inline-flex items-center gap-1.5 rounded-[7px] border border-[var(--line)] px-2.5 py-1.5 text-xs font-medium text-[var(--muted)] transition-colors hover:border-[var(--brand)] hover:bg-[var(--brand-tint)] hover:text-[var(--brand-active)]"
+        >
+          <Pencil size={14} aria-hidden />
+          Rename
+        </button>
         <button
           type="button"
           onClick={onDelete}
@@ -90,6 +112,7 @@ function WorkspaceCard({ w, current, onDelete }: { w: CompanyWorkspace; current:
           <Trash2 size={14} aria-hidden />
           Delete
         </button>
+        </div>
       </div>
     </div>
   );
@@ -108,6 +131,9 @@ function Workspaces({ workspaceId }: { workspaceId: string }) {
   const [confirmName, setConfirmName] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleted, setDeleted] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<CompanyWorkspace | null>(null);
+  const [newName, setNewName] = useState("");
+  const [renameError, setRenameError] = useState<string | null>(null);
   const { pageItems, pager } = usePagination(rows ?? []);
 
   const refresh = useCallback(async () => {
@@ -244,6 +270,63 @@ function Workspaces({ workspaceId }: { workspaceId: string }) {
       </Modal>
 
       <Modal
+        open={Boolean(renaming)}
+        onClose={() => (busy ? undefined : setRenaming(null))}
+        title="Rename workspace"
+        description="The new name shows everywhere straight away, including the workspace switcher."
+        size="sm"
+        footer={
+          <>
+            <Button onClick={() => setRenaming(null)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="rename-workspace-form"
+              variant="primary"
+              disabled={busy || !newName.trim() || newName.trim() === renaming?.name}
+            >
+              {busy ? "Saving…" : "Save name"}
+            </Button>
+          </>
+        }
+      >
+        <form
+          id="rename-workspace-form"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!renaming) return;
+            setBusy(true);
+            setRenameError(null);
+            try {
+              await renameCompanyWorkspace(workspaceId, renaming.id, newName.trim());
+              setRenaming(null);
+              await Promise.all([refresh(), refreshSwitcher()]);
+            } catch (err) {
+              setRenameError(err instanceof Error ? err.message : "Could not rename the workspace");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <Field label="Workspace name">
+            <input
+              required
+              autoFocus
+              maxLength={200}
+              className={inputClass}
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              autoComplete="off"
+            />
+          </Field>
+          <div className="mt-3">
+            <FormError message={renameError} />
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
         open={adding}
         onClose={() => setAdding(false)}
         title="Add a workspace"
@@ -297,6 +380,11 @@ function Workspaces({ workspaceId }: { workspaceId: string }) {
             key={w.id}
             w={w}
             current={w.id === workspaceId}
+            onRename={() => {
+              setRenameError(null);
+              setNewName(w.name);
+              setRenaming(w);
+            }}
             onDelete={() => {
               setDeleteError(null);
               setConfirmName("");

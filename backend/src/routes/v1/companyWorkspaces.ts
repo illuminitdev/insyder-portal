@@ -102,6 +102,27 @@ export async function companyWorkspaceRoutes(app: FastifyInstance) {
     return created;
   });
 
+  /** Rename a workspace of the company (the current one included). */
+  app.patch("/v1/workspaces/:workspaceId/company/workspaces/:targetId", { preHandler: authenticateRequired }, async (req) => {
+    const m = await tenantAdmin(req);
+    const { targetId } = req.params as { targetId: string };
+    const workspace = await companyWorkspace(m, targetId);
+    const body = z.object({ name: z.string().trim().min(1, "Workspace name is required").max(200) }).parse(req.body);
+    if (body.name !== workspace.name) {
+      await getDb().update(workspaces).set({ name: body.name }).where(eq(workspaces.id, workspace.id));
+      await writeAudit({
+        tenantId: m.tenantId,
+        workspaceId: workspace.id,
+        actorUserId: m.userId,
+        action: "workspace.renamed",
+        entityType: "workspace",
+        entityId: workspace.id,
+        metadata: { from: workspace.name, to: body.name },
+      });
+    }
+    return { workspace: { ...workspace, name: body.name } };
+  });
+
   /**
    * Delete a workspace of the company. Its records are kept (audit trail, spec §4 retention)
    * but it disappears for everyone: every membership in it is revoked and it is hidden from lists.

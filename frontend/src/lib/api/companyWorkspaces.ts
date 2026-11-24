@@ -27,6 +27,13 @@ export function createCompanyWorkspace(workspaceId: string, name: string) {
   });
 }
 
+export function renameCompanyWorkspace(workspaceId: string, targetId: string, name: string) {
+  return api<{ workspace: { id: string; name: string } }>(`${base(workspaceId)}/${targetId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+}
+
 /** Removes the workspace for everyone (records are kept for the audit trail). Not allowed for the current one. */
 export function deleteCompanyWorkspace(workspaceId: string, targetId: string) {
   return api<{ deleted: true; workspaceId: string }>(`${base(workspaceId)}/${targetId}`, { method: "DELETE" });
