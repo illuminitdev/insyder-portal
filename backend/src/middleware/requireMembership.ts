@@ -85,6 +85,8 @@ export function accountScope(ctx: MembershipContext): SQL {
     eq(accounts.workspaceId, ctx.workspaceId),
     eq(accounts.tenantId, ctx.tenantId),
     isNull(accounts.mergedIntoId),
+    // Deleted accounts are gone for everyone (archived ones stay readable; lists hide them)
+    isNull(accounts.deletedAt),
   )!;
   if (ctx.role !== "sdr") return base;
   return and(
@@ -107,6 +109,7 @@ export async function assertAccountInWorkspace(accountId: string, workspaceId: s
         eq(accounts.id, accountId),
         eq(accounts.workspaceId, workspaceId),
         eq(accounts.tenantId, tenantId),
+        isNull(accounts.deletedAt),
       ),
     )
     .limit(1);

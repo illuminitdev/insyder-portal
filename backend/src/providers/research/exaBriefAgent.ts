@@ -2,6 +2,8 @@ import { NormalizedProviderError } from "./types.js";
 import type {
   BriefAgentInput,
   BriefAgentResult,
+  BriefEventRole,
+  BriefInterestsAndEvents,
   BriefOfferPick,
   MeetingType,
   StakeholderBriefContent,
@@ -83,6 +85,49 @@ export function briefOutputSchema() {
       immediateOpportunity: S("The clearest immediate opportunity for us"),
       otherOpportunities: LIST("Other openings worth noting (e.g. community, events, partnerships)", 3),
     }),
+    interestsAndEvents: OBJ({
+      visibility: S(
+        "How visible this person is in public sources (e.g. frequent speaker, occasional poster, almost no public footprint), so the seller knows how far to trust this section",
+      ),
+      interests: {
+        type: "array",
+        maxItems: 6,
+        description: "Professional topics they visibly care about: what they speak, write, post or advocate about",
+        items: OBJ({
+          topic: S("The topic, in a few words"),
+          evidence: S("What shows this interest, in one sentence (e.g. gave a keynote on it, writes about it regularly)"),
+          url: S("URL of the page that shows it, or an empty string"),
+        }),
+      },
+      upcomingEvents: {
+        type: "array",
+        maxItems: 6,
+        description:
+          "Conferences, summits, trade shows, webinars, panels or awards they are likely to attend in the coming months. Only events that have not happened yet.",
+        items: OBJ({
+          name: S("Event name"),
+          date: S("Event date as YYYY-MM-DD, or YYYY-MM if only the month is known"),
+          location: S("City and country, or 'Online'"),
+          role: { type: "string", enum: ["speaking", "attending", "sponsoring", "likely_attending"], description: "Their role at the event" },
+          basis: S(
+            "Why we think they will be there (e.g. listed as speaker, their company is sponsoring, they attended the last three years)",
+          ),
+          url: S("URL of the page that supports this (agenda, speaker list, post)"),
+        }),
+      },
+      recentAppearances: {
+        type: "array",
+        maxItems: 6,
+        description: "Their most recent public talks, podcasts, interviews, articles or panels, newest first",
+        items: OBJ({
+          title: S("Title of the talk, episode or article"),
+          date: S("Date as YYYY-MM-DD or YYYY-MM, or an empty string"),
+          kind: S("talk, podcast, interview, article, panel or post"),
+          url: S("URL, or an empty string"),
+        }),
+      },
+      conversationHooks: LIST("Short, natural openers the seller could use, each tied to one interest or event above", 4),
+    }),
     offerRanking: OBJ({
       leadWith: PICKS("Our offers to lead with, best fit first"),
       supportWith: PICKS("Our offers to bring in as support"),
@@ -139,8 +184,9 @@ export function briefOutputSchema() {
 
 const clip = (v: string | null | undefined, max: number) => (v ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
 
-export function briefAgentRequest(input: BriefAgentInput) {
+export function briefAgentRequest(input: BriefAgentInput, today: Date = new Date()) {
   const { person, company, account, seller, meeting } = input;
+  const todayIso = today.toISOString().slice(0, 10);
   const where = [company.name, company.domain ? `(${company.domain})` : "", company.country ? `, ${company.country}` : ""].join(" ").trim();
   const sellerName = seller.company?.trim() || "our company";
 
@@ -199,6 +245,19 @@ export function briefAgentRequest(input: BriefAgentInput) {
 
   lines.push(
     "",
+    `INTERESTS AND EVENTS (today is ${todayIso})`,
+    "Find what this person visibly cares about professionally and where the seller could meet them in person. " +
+      "Search conference agendas and speaker lists, webinar and podcast pages, industry awards, trade shows, their posts " +
+      "and articles, and the events their company sponsors or exhibits at.",
+    `- upcomingEvents: only events after ${todayIso}, ideally in the next six months. Each needs a page that supports it. ` +
+      "Use 'speaking' only when they are named on the agenda or speaker list; 'likely_attending' when it is an inference " +
+      "(e.g. they went in earlier years, or their company exhibits). Leave the list empty rather than guess.",
+    "- recentAppearances: what they have said in public in the last 12 months.",
+    "- Keep this to professional activity. Never include personal plans, holidays, family events or home location.",
+  );
+
+  lines.push(
+    "",
     "RULES",
     "- Write for the seller, in plain, direct British English. Be specific to this person and company; no generic sales advice.",
     "- Every point about how the person thinks or behaves is a working hypothesis from public evidence, phrased as 'likely' or 'appears to'. It is preparation, not a personality diagnosis.",
@@ -238,7 +297,68 @@ function picks(v: unknown, offerNames: string[], maxItems: number): BriefOfferPi
   return out.slice(0, maxItems);
 }
 
-export function briefFromAgentOutput(structured: unknown, offerNames: string[]): StakeholderBriefContent | null {
+const EVENT_ROLES: readonly BriefEventRole[] = ["speaking", "attending", "sponsoring", "likely_attending"];
+const ISO_DAY_OR_MONTH = /^\d{4}-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?$/;
+
+/** Interests, upcoming events and recent appearances. Events must be dated, in the future and sourced. */
+export function interestsAndEventsFromOutput(v: unknown, today: Date = new Date()): BriefInterestsAndEvents {
+  const r = obj(v);
+  const todayDay = today.toISOString().slice(0, 10);
+  const todayMonth = todayDay.slice(0, 7);
+  const arr = (x: unknown) => (Array.isArray(x) ? x : []);
+
+  const interests: BriefInterestsAndEvents["interests"] = [];
+  for (const x of arr(r.interests)) {
+    const o = obj(x);
+    const topic = text(o.topic, 120);
+    if (!topic || interests.some((i) => i.topic.toLowerCase() === topic.toLowerCase())) continue;
+    interests.push({ topic, evidence: text(o.evidence, 400), url: httpUrl(o.url) ?? null });
+  }
+
+  const upcomingEvents: BriefInterestsAndEvents["upcomingEvents"] = [];
+  for (const x of arr(r.upcomingEvents)) {
+    const o = obj(x);
+    const name = text(o.name, 200);
+    const date = text(o.date, 10);
+    const url = httpUrl(o.url);
+    // No guessing: an event needs a name, a real date and a page that backs it up
+    if (!name || !url || !ISO_DAY_OR_MONTH.test(date)) continue;
+    // Past events are not "upcoming" (a month-only date counts for the whole month)
+    if (date.length === 7 ? date < todayMonth : date < todayDay) continue;
+    const role = EVENT_ROLES.includes(o.role as BriefEventRole) ? (o.role as BriefEventRole) : "likely_attending";
+    if (upcomingEvents.some((e) => e.name.toLowerCase() === name.toLowerCase() && e.date === date)) continue;
+    upcomingEvents.push({ name, date, location: text(o.location, 120), role, basis: text(o.basis, 400), url });
+  }
+  upcomingEvents.sort((a, b) => a.date.localeCompare(b.date));
+
+  const recentAppearances: BriefInterestsAndEvents["recentAppearances"] = [];
+  for (const x of arr(r.recentAppearances)) {
+    const o = obj(x);
+    const title = text(o.title, 200);
+    if (!title) continue;
+    const date = text(o.date, 10);
+    recentAppearances.push({
+      title,
+      date: ISO_DAY_OR_MONTH.test(date) ? date : "",
+      kind: text(o.kind, 40).toLowerCase(),
+      url: httpUrl(o.url) ?? null,
+    });
+  }
+
+  return {
+    visibility: text(r.visibility, 600),
+    interests: interests.slice(0, 6),
+    upcomingEvents: upcomingEvents.slice(0, 6),
+    recentAppearances: recentAppearances.slice(0, 6),
+    conversationHooks: texts(r.conversationHooks, 4, 300),
+  };
+}
+
+export function briefFromAgentOutput(
+  structured: unknown,
+  offerNames: string[],
+  today: Date = new Date(),
+): StakeholderBriefContent | null {
   const r = obj(structured);
   if (!Object.keys(r).length) return null;
   const mc = obj(r.meetingContext);
@@ -296,6 +416,7 @@ export function briefFromAgentOutput(structured: unknown, offerNames: string[]):
       immediateOpportunity: text(tw.immediateOpportunity),
       otherOpportunities: texts(tw.otherOpportunities, 4),
     },
+    interestsAndEvents: interestsAndEventsFromOutput(r.interestsAndEvents, today),
     offerRanking: {
       leadWith: picks(or.leadWith, offerNames, 3),
       supportWith: picks(or.supportWith, offerNames, 4),

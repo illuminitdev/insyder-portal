@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "../../db/client.js";
 import { accounts, evidence, offers, playbookVersions, providerUsage, researchRuns } from "../../db/schema/index.js";
@@ -367,7 +367,7 @@ export async function researchRunRoutes(app: FastifyInstance) {
       const rows = await db
         .select()
         .from(accounts)
-        .where(and(eq(accounts.workspaceId, workspaceId), eq(accounts.tenantId, m.tenantId), inArray(accounts.id, ids)));
+        .where(and(eq(accounts.workspaceId, workspaceId), eq(accounts.tenantId, m.tenantId), inArray(accounts.id, ids), isNull(accounts.deletedAt)));
       const byId = new Map(rows.map((r) => [r.id, r]));
       const suppressed = await activeSuppressionSet(workspaceId);
       const skipped: Array<{ accountId: string; reason: string }> = [];

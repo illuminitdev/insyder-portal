@@ -19,6 +19,8 @@ export type Account = {
   whyNowText?: string | null;
   whyNowCitationsJson?: string | null;
   whyNowAt?: string | null;
+  /** Archived as not relevant: hidden from lists by default, restorable */
+  archivedAt?: string | null;
 };
 
 export type WhyNowCitation = { url: string; title: string | null; publishedDate: string | null };
@@ -110,12 +112,25 @@ export type MergeCandidate = {
 
 export function listAccounts(
   workspaceId: string,
-  filters: { acceptanceState?: string; researchState?: string; ownerUserId?: string; source?: string } = {},
+  filters: { acceptanceState?: string; researchState?: string; ownerUserId?: string; source?: string; archived?: "only" } = {},
 ) {
   const qs = new URLSearchParams(Object.entries(filters).filter(([, v]) => v) as [string, string][]);
   return api<{ accounts: Account[] }>(
     `/v1/workspaces/${workspaceId}/accounts${qs.size ? `?${qs}` : ""}`,
   );
+}
+
+/** Archive (or restore) an account judged not relevant. Research does not add results to archived accounts. */
+export function setAccountArchived(accountId: string, workspaceId: string, archived: boolean) {
+  return api<{ account: Account }>(`/v1/workspaces/${workspaceId}/accounts/${accountId}/archive`, {
+    method: "POST",
+    body: JSON.stringify({ archived }),
+  });
+}
+
+/** Delete an account (tenant admin). It disappears everywhere and research does not bring it back. */
+export function deleteAccount(accountId: string, workspaceId: string) {
+  return api<{ ok: true }>(`/v1/workspaces/${workspaceId}/accounts/${accountId}`, { method: "DELETE" });
 }
 
 export type PipelineRow = {

@@ -201,6 +201,29 @@ export type BriefAgentInput = {
 
 export type BriefOfferPick = { offer: string; why: string };
 
+export type BriefEventRole = "speaking" | "attending" | "sponsoring" | "likely_attending";
+
+/** Professional interests and the events a decision maker is likely to be at (public sources only). */
+export type BriefInterestsAndEvents = {
+  /** How visible the person is in public sources, and so how much to trust this section */
+  visibility: string;
+  interests: Array<{ topic: string; evidence: string; url: string | null }>;
+  /** Only events after the brief date, each with a source page */
+  upcomingEvents: Array<{
+    name: string;
+    date: string;
+    location: string;
+    role: BriefEventRole;
+    /** Why we think they will be there */
+    basis: string;
+    url: string;
+  }>;
+  /** Recent talks, podcasts, articles and panels: what they have been saying lately */
+  recentAppearances: Array<{ title: string; date: string; kind: string; url: string | null }>;
+  /** Short openers the seller could use, tied to an interest or event */
+  conversationHooks: string[];
+};
+
 /** A stakeholder brief, section by section (mirrors the meeting-prep overlay the client sent). */
 export type StakeholderBriefContent = {
   meetingContext: { opening: string; posture: string; centralTension: string };
@@ -214,6 +237,8 @@ export type StakeholderBriefContent = {
     howToAdapt: string[];
   };
   theirWorld: { companyPosition: string; gap: string; immediateOpportunity: string; otherOpportunities: string[] };
+  /** Missing on briefs written before this section existed */
+  interestsAndEvents?: BriefInterestsAndEvents;
   offerRanking: { leadWith: BriefOfferPick[]; supportWith: BriefOfferPick[]; holdInReserve: BriefOfferPick[]; avoid: string[] };
   commercialShape: { name: string; duration: string; steps: string[]; principle: string };
   meetingPlan: { openingApproach: string; bridges: string[]; questions: string[]; signalsToListenFor: string[]; theAsk: string };

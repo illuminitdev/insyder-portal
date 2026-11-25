@@ -116,6 +116,16 @@ export type BriefMeeting = {
 
 export type BriefOfferPick = { offer: string; why: string };
 
+export type BriefEventRole = "speaking" | "attending" | "sponsoring" | "likely_attending";
+
+export type BriefInterestsAndEvents = {
+  visibility: string;
+  interests: Array<{ topic: string; evidence: string; url: string | null }>;
+  upcomingEvents: Array<{ name: string; date: string; location: string; role: BriefEventRole; basis: string; url: string }>;
+  recentAppearances: Array<{ title: string; date: string; kind: string; url: string | null }>;
+  conversationHooks: string[];
+};
+
 export type StakeholderBriefContent = {
   meetingContext: { opening: string; posture: string; centralTension: string };
   whoTheyAre: { summary: string; background: string; controls: string[]; doesNotControl: string[] };
@@ -128,6 +138,8 @@ export type StakeholderBriefContent = {
     howToAdapt: string[];
   };
   theirWorld: { companyPosition: string; gap: string; immediateOpportunity: string; otherOpportunities: string[] };
+  /** Missing on briefs written before this section existed */
+  interestsAndEvents?: BriefInterestsAndEvents;
   offerRanking: { leadWith: BriefOfferPick[]; supportWith: BriefOfferPick[]; holdInReserve: BriefOfferPick[]; avoid: string[] };
   commercialShape: { name: string; duration: string; steps: string[]; principle: string };
   meetingPlan: { openingApproach: string; bridges: string[]; questions: string[]; signalsToListenFor: string[]; theAsk: string };

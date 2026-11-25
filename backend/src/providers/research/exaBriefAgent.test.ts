@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BRIEF_AGENT, briefAgentRequest, briefFromAgentOutput } from "./exaBriefAgent.js";
+import { BRIEF_AGENT, briefAgentRequest, briefFromAgentOutput, interestsAndEventsFromOutput } from "./exaBriefAgent.js";
 import type { BriefAgentInput } from "./types.js";
 import { AUTO_MEETING } from "../../services/stakeholderBriefs.js";
 
@@ -112,6 +112,54 @@ describe("Exa Agent stakeholder brief", () => {
     // Missing sections come back empty, never undefined
     expect(brief!.tacticalBrief.bestNextStep).toBe("");
     expect(brief!.commercialShape.steps).toEqual([]);
+  });
+
+  it("asks for interests and upcoming events relative to today, professional only", () => {
+    const req = briefAgentRequest(input, new Date("2026-11-25T10:00:00Z"));
+    expect(req.query).toContain("INTERESTS AND EVENTS (today is 2026-11-25)");
+    expect(req.query).toContain("only events after 2026-11-25");
+    expect(req.query).toMatch(/Never include personal plans/);
+    expect((req.outputSchema.properties as Record<string, unknown>).interestsAndEvents).toBeDefined();
+  });
+
+  it("keeps only dated, sourced, future events and tidies interests", () => {
+    const today = new Date("2026-11-25T10:00:00Z");
+    const ie = interestsAndEventsFromOutput(
+      {
+        visibility: "Frequent conference speaker",
+        interests: [
+          { topic: "Channel enablement", evidence: "Keynote at Canalys", url: "https://example.com/talk" },
+          { topic: "channel enablement", evidence: "duplicate" },
+          { topic: "AI adoption", evidence: "Posts weekly", url: "not a url" },
+          { topic: "" },
+        ],
+        upcomingEvents: [
+          { name: "Canalys Forum EMEA", date: "2027-03", location: "Barcelona", role: "speaking", basis: "On the agenda", url: "https://example.com/agenda" },
+          { name: "Partner Summit", date: "2026-12-02", location: "London", role: "weird", basis: "Company sponsors", url: "https://example.com/ps" },
+          { name: "Past Expo", date: "2026-10-01", url: "https://example.com/past" },
+          { name: "This month", date: "2026-11", url: "https://example.com/nov" },
+          { name: "No source", date: "2027-01-10" },
+          { name: "Fuzzy date", date: "Spring 2027", url: "https://example.com/f" },
+        ],
+        recentAppearances: [{ title: "Podcast ep 12", date: "last year", kind: "Podcast", url: "https://example.com/p" }, { title: "" }],
+        conversationHooks: ["Saw your Canalys talk on enablement", ""],
+      },
+      today,
+    );
+    expect(ie.visibility).toBe("Frequent conference speaker");
+    expect(ie.interests.map((i) => i.topic)).toEqual(["Channel enablement", "AI adoption"]);
+    expect(ie.interests[1]!.url).toBeNull();
+    // Sorted by date; past, unsourced and undated events dropped; unknown role falls back to an inference
+    expect(ie.upcomingEvents.map((e) => e.name)).toEqual(["This month", "Partner Summit", "Canalys Forum EMEA"]);
+    expect(ie.upcomingEvents[1]!.role).toBe("likely_attending");
+    expect(ie.upcomingEvents[2]!.role).toBe("speaking");
+    expect(ie.recentAppearances).toEqual([{ title: "Podcast ep 12", date: "", kind: "podcast", url: "https://example.com/p" }]);
+    expect(ie.conversationHooks).toEqual(["Saw your Canalys talk on enablement"]);
+  });
+
+  it("returns an empty interests section when the agent gives none", () => {
+    const brief = briefFromAgentOutput({ whoTheyAre: { summary: "Leads sales" } }, []);
+    expect(brief!.interestsAndEvents).toEqual({ visibility: "", interests: [], upcomingEvents: [], recentAppearances: [], conversationHooks: [] });
   });
 
   it("treats empty output as no brief", () => {

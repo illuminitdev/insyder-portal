@@ -60,7 +60,7 @@ export async function companyWorkspaceRoutes(app: FastifyInstance) {
         .select({ workspaceId: accounts.workspaceId, n: count() })
         .from(accounts)
         // Same records as the watchlist: duplicates merged into another account are left out
-        .where(and(eq(accounts.tenantId, m.tenantId), isNull(accounts.mergedIntoId)))
+        .where(and(eq(accounts.tenantId, m.tenantId), isNull(accounts.mergedIntoId), isNull(accounts.archivedAt), isNull(accounts.deletedAt)))
         .groupBy(accounts.workspaceId),
       db
         .select({ workspaceId: memberships.workspaceId })

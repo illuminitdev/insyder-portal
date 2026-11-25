@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { and, asc, desc, eq, getTableColumns, inArray, isNotNull, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, inArray, isNotNull, isNull, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "../../db/client.js";
 import {
@@ -49,9 +49,12 @@ export async function accountRoutes(app: FastifyInstance) {
           ownerUserId: z.string().optional(),
           /** e.g. "crm_import" for the watchlist's "From HubSpot" filter */
           source: z.enum(["manual", "import", "crm_import", "discovery", "lookalike", "list"]).optional(),
+          /** Archived accounts are hidden unless asked for: "only" lists just them */
+          archived: z.enum(["exclude", "only"]).default("exclude"),
         })
         .parse(req.query);
       const where: SQL[] = [accountScope(m)];
+      where.push(q.archived === "only" ? isNotNull(accounts.archivedAt) : isNull(accounts.archivedAt));
       if (q.source) where.push(eq(accounts.source, q.source));
       if (q.acceptanceState) where.push(eq(accounts.acceptanceState, q.acceptanceState));
       if (q.researchState) where.push(eq(accounts.researchState, q.researchState));
@@ -89,7 +92,7 @@ export async function accountRoutes(app: FastifyInstance) {
         })
         .from(accounts)
         .leftJoin(users, eq(users.id, accounts.ownerUserId))
-        .where(accountScope(m))
+        .where(and(accountScope(m), isNull(accounts.archivedAt)))
         .orderBy(desc(accounts.updatedAt));
       const ids = rows.map((r) => r.id);
       if (!ids.length) return { rows: [] };
@@ -336,6 +339,77 @@ export async function accountRoutes(app: FastifyInstance) {
     },
   );
 
+  /**
+   * Archive an account the researcher judged not relevant: it leaves the account lists, pipeline and
+   * exports, stays readable and restorable, and research does not add new results to it.
+   */
+  app.post(
+    "/v1/workspaces/:workspaceId/accounts/:accountId/archive",
+    { preHandler: authenticateRequired },
+    async (req) => {
+      const { workspaceId, accountId } = req.params as { workspaceId: string; accountId: string };
+      const m = await loadMembership(req, workspaceId);
+      requireCap(m, "import");
+      await assertAccountReadable(m, accountId);
+      const body = z.object({ archived: z.boolean() }).parse(req.body ?? {});
+      const db = getDb();
+      const [row] = await db
+        .update(accounts)
+        .set(
+          body.archived
+            ? { archivedAt: new Date(), archivedBy: m.userId, updatedAt: new Date() }
+            : { archivedAt: null, archivedBy: null, updatedAt: new Date() },
+        )
+        .where(and(eq(accounts.id, accountId), accountScope(m)))
+        .returning();
+      await writeAudit({
+        tenantId: m.tenantId,
+        workspaceId,
+        actorUserId: m.userId,
+        action: body.archived ? "account.archived" : "account.restored",
+        entityType: "account",
+        entityId: accountId,
+      });
+      return { account: row };
+    },
+  );
+
+  /**
+   * Delete an account (tenant admin). Soft delete: the record and its history are kept for the audit
+   * trail but it disappears everywhere, and research does not bring the company back.
+   */
+  app.delete(
+    "/v1/workspaces/:workspaceId/accounts/:accountId",
+    { preHandler: authenticateRequired },
+    async (req) => {
+      const { workspaceId, accountId } = req.params as { workspaceId: string; accountId: string };
+      const m = await loadMembership(req, workspaceId);
+      requireCap(m, "manage_settings");
+      await assertAccountReadable(m, accountId);
+      const db = getDb();
+      const [acct] = await db
+        .update(accounts)
+        .set({ deletedAt: new Date(), deletedBy: m.userId, updatedAt: new Date() })
+        .where(and(eq(accounts.id, accountId), accountScope(m)))
+        .returning({ name: accounts.name, domain: accounts.domain });
+      // Open work on a deleted account would otherwise linger in task lists
+      await db
+        .update(tasks)
+        .set({ status: "cancelled" })
+        .where(and(eq(tasks.accountId, accountId), inArray(tasks.status, ["open", "in_progress"])));
+      await writeAudit({
+        tenantId: m.tenantId,
+        workspaceId,
+        actorUserId: m.userId,
+        action: "account.deleted",
+        entityType: "account",
+        entityId: accountId,
+        metadata: { name: acct?.name ?? null, domain: acct?.domain ?? null },
+      });
+      return { ok: true };
+    },
+  );
+
   app.get(
     "/v1/workspaces/:workspaceId/accounts/export",
     { preHandler: authenticateRequired },
@@ -344,7 +418,7 @@ export async function accountRoutes(app: FastifyInstance) {
       const m = await loadMembership(req, workspaceId);
       requireCap(m, "export");
       const db = getDb();
-      const rows = await db.select().from(accounts).where(accountScope(m));
+      const rows = await db.select().from(accounts).where(and(accountScope(m), isNull(accounts.archivedAt)));
       // Gate 8: suppression honored in exports
       const visible = await filterUnsuppressedAccounts(workspaceId, rows);
       await writeAudit({

@@ -17,7 +17,7 @@ import { notFound, validationError, conflict } from "../utils/errors.js";
 import { newId } from "../utils/ids.js";
 import { activeSuppressionSet, isSuppressed } from "./suppressions.js";
 import { persistNormalizedEvidence } from "./evidence.js";
-import { normalizeDomain } from "../utils/normalize.js";
+import { companyDomain, normalizeDomain } from "../utils/normalize.js";
 import { redactString } from "../utils/redact.js";
 import { getResearchProvider, isResearchConfigured } from "../providers/research/index.js";
 import { latestPlaybook } from "./playbooks.js";
@@ -562,7 +562,7 @@ export async function runMonitorCheck(workspaceId: string, monitorId: string) {
   let evidenceAdded = 0;
 
   for (const item of discovery.items) {
-    const domain = normalizeDomain(item.subject?.companyWebsite ?? "") ?? null;
+    const domain = companyDomain(item.subject?.companyWebsite ?? "") ?? null;
     const title = item.title?.trim() || item.subject?.eventSummary?.trim() || item.canonicalUrl;
 
     // Suppression (spec §4, §9)
@@ -588,7 +588,7 @@ export async function runMonitorCheck(workspaceId: string, monitorId: string) {
       const [matchedAcc] = await db
         .select({ id: accounts.id })
         .from(accounts)
-        .where(and(eq(accounts.workspaceId, workspaceId), eq(accounts.domain, domain)))
+        .where(and(eq(accounts.workspaceId, workspaceId), eq(accounts.domain, domain), isNull(accounts.archivedAt), isNull(accounts.deletedAt)))
         .limit(1);
       matchedAccountId = matchedAcc?.id ?? null;
     }

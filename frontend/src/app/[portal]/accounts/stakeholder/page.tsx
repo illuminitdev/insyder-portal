@@ -5,13 +5,16 @@ import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   Ban,
+  CalendarDays,
   CheckCircle2,
   Download,
   ExternalLink,
   HelpCircle,
   Lightbulb,
   Loader2,
+  MapPin,
   MessageSquareQuote,
+  Mic,
   RefreshCw,
   ShieldAlert,
   Sparkles,
@@ -30,6 +33,8 @@ import {
   MEETING_TYPES,
   createStakeholderBrief,
   listStakeholderBriefs,
+  type BriefEventRole,
+  type BriefInterestsAndEvents,
   type BriefMeeting,
   type BriefOfferPick,
   type StakeholderBrief,
@@ -101,10 +106,128 @@ function Picks({ title, tone, items }: { title: string; tone: string; items: Bri
   );
 }
 
+// ---------- Interests & upcoming events ----------
+
+const EVENT_ROLE: Record<BriefEventRole, { label: string; tone: string }> = {
+  speaking: { label: "Speaking", tone: "bg-[var(--badge-green-bg)] text-[var(--badge-green-fg)]" },
+  attending: { label: "Attending", tone: "bg-[var(--badge-blue-bg)] text-[var(--badge-blue-fg)]" },
+  sponsoring: { label: "Company sponsoring", tone: "bg-[var(--badge-blue-bg)] text-[var(--badge-blue-fg)]" },
+  likely_attending: { label: "Likely attending", tone: "bg-[var(--chip-bg)] text-[var(--muted)]" },
+};
+
+/** "2027-03-14" → "14 Mar 2027", "2027-03" → "Mar 2027" */
+function eventDate(d: string) {
+  if (!d) return "";
+  const [y, m, day] = d.split("-").map(Number);
+  if (!y || !m) return d;
+  const dt = new Date(Date.UTC(y, m - 1, day || 1));
+  return dt.toLocaleDateString("en-GB", { timeZone: "UTC", ...(day ? { day: "numeric" } : {}), month: "short", year: "numeric" });
+}
+
+function SourceLink({ url, children }: { url: string | null; children: React.ReactNode }) {
+  if (!url) return <>{children}</>;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="text-[#4f46c8] hover:underline">
+      {children}
+    </a>
+  );
+}
+
+function hasInterestsContent(ie: BriefInterestsAndEvents | undefined): ie is BriefInterestsAndEvents {
+  return Boolean(
+    ie && (ie.visibility || ie.interests.length || ie.upcomingEvents.length || ie.recentAppearances.length || ie.conversationHooks.length),
+  );
+}
+
+function InterestsAndEvents({ n, ie }: { n: number; ie: BriefInterestsAndEvents }) {
+  return (
+    <Section n={n} title="Interests & upcoming events">
+      <Para label="Public visibility" text={ie.visibility} />
+
+      <div>
+        <h3 className="mb-1.5 flex items-center gap-2 text-[14px] font-semibold">
+          <CalendarDays size={15} className="text-[var(--muted)]" aria-hidden /> Where you could meet them
+        </h3>
+        {ie.upcomingEvents.length ? (
+          <ul className="space-y-2">
+            {ie.upcomingEvents.map((e) => (
+              <li key={`${e.name}-${e.date}`} className="brief-tile flex gap-3 rounded-[10px] border border-[var(--line)] p-3">
+                <div className="w-[88px] shrink-0 text-center">
+                  <p className="text-[13px] font-semibold leading-tight">{eventDate(e.date)}</p>
+                  {e.location ? (
+                    <p className="mt-0.5 flex items-center justify-center gap-1 text-xs text-[var(--muted)]">
+                      <MapPin size={11} aria-hidden /> {e.location}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-2 font-semibold">
+                    <SourceLink url={e.url}>{e.name}</SourceLink>
+                    <span className={`rounded px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${EVENT_ROLE[e.role].tone}`}>
+                      {EVENT_ROLE[e.role].label}
+                    </span>
+                  </p>
+                  {e.basis ? <p className="mt-0.5 text-[var(--muted)]">{e.basis}</p> : null}
+                  <p className="hidden break-all text-[10px] text-[var(--muted)] print:block">{e.url}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[var(--muted)]">No upcoming events found in public sources. Ask about their event plans in conversation.</p>
+        )}
+      </div>
+
+      {ie.interests.length ? (
+        <div>
+          <h3 className="mb-1.5 text-[14px] font-semibold">What they care about</h3>
+          <ul className="space-y-1.5">
+            {ie.interests.map((i) => (
+              <li key={i.topic} className="flex items-start gap-2">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" aria-hidden />
+                <span>
+                  <span className="font-semibold">
+                    <SourceLink url={i.url}>{i.topic}</SourceLink>
+                  </span>
+                  {i.evidence ? <span className="text-[var(--muted)]"> · {i.evidence}</span> : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {ie.recentAppearances.length ? (
+        <div>
+          <h3 className="mb-1.5 text-[14px] font-semibold">Recently said in public</h3>
+          <ul className="space-y-1.5">
+            {ie.recentAppearances.map((a, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <Mic size={14} className="mt-0.5 shrink-0 text-[var(--muted)]" aria-hidden />
+                <span>
+                  <SourceLink url={a.url}>{a.title}</SourceLink>
+                  {a.kind || a.date ? (
+                    <span className="text-[var(--muted)]"> · {[a.kind, eventDate(a.date)].filter(Boolean).join(", ")}</span>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      <Bullets title="Conversation hooks" items={ie.conversationHooks} icon={MessageSquareQuote} />
+    </Section>
+  );
+}
+
 // ---------- The brief ----------
 
 function BriefBody({ b }: { b: StakeholderBriefContent }) {
   const tb = b.tacticalBrief;
+  const ie = hasInterestsContent(b.interestsAndEvents) ? b.interestsAndEvents : null;
+  // Sections after "Their world" shift by one when the interests section is shown
+  const k = ie ? 1 : 0;
   return (
     <div className="space-y-5 print:space-y-3">
       <Section n={1} title="Meeting context">
@@ -144,7 +267,9 @@ function BriefBody({ b }: { b: StakeholderBriefContent }) {
         <Bullets title="Other openings" items={b.theirWorld.otherOpportunities} />
       </Section>
 
-      <Section n={4} title="Our offer, ranked for this person">
+      {ie ? <InterestsAndEvents n={4} ie={ie} /> : null}
+
+      <Section n={4 + k} title="Our offer, ranked for this person">
         {b.offerRanking.leadWith.length + b.offerRanking.supportWith.length + b.offerRanking.holdInReserve.length === 0 ? (
           <p className="text-[var(--muted)]">
             No products were ranked. Add your products in Settings → Offer &amp; targeting, then regenerate.
@@ -158,7 +283,7 @@ function BriefBody({ b }: { b: StakeholderBriefContent }) {
         <Bullets title="Avoid" items={b.offerRanking.avoid} icon={Ban} />
       </Section>
 
-      <Section n={5} title="Recommended commercial shape">
+      <Section n={5 + k} title="Recommended commercial shape">
         {b.commercialShape.name ? (
           <p className="font-semibold">
             {b.commercialShape.name}
@@ -169,7 +294,7 @@ function BriefBody({ b }: { b: StakeholderBriefContent }) {
         <Para label="Commercial principle" text={b.commercialShape.principle} />
       </Section>
 
-      <Section n={6} title="How to run the meeting">
+      <Section n={6 + k} title="How to run the meeting">
         <Para label="Opening approach" text={b.meetingPlan.openingApproach} />
         <Bullets title="Conversation bridges" items={b.meetingPlan.bridges} icon={MessageSquareQuote} />
         {b.meetingPlan.questions.length ? (
@@ -187,7 +312,7 @@ function BriefBody({ b }: { b: StakeholderBriefContent }) {
       </Section>
 
       {b.objections.length ? (
-        <Section n={7} title="Objections and how to handle them">
+        <Section n={7 + k} title="Objections and how to handle them">
           {b.objections.map((o, i) => (
             <div key={i} className="brief-tile rounded-[10px] border border-[var(--line)] p-3.5">
               <p className="font-semibold">“{o.objection}”</p>
@@ -207,12 +332,12 @@ function BriefBody({ b }: { b: StakeholderBriefContent }) {
       ) : null}
 
       {b.unknowns.length ? (
-        <Section n={8} title="What you do not know yet">
+        <Section n={8 + k} title="What you do not know yet">
           <Bullets items={b.unknowns} icon={HelpCircle} />
         </Section>
       ) : null}
 
-      <Section n={9} title="Tactical brief">
+      <Section n={9 + k} title="Tactical brief">
         <Para label="The stakeholder" text={tb.stakeholder} />
         <Para label="The situation" text={tb.situation} />
         <Para label="Lead with" text={tb.leadWith} />
@@ -228,7 +353,7 @@ function BriefBody({ b }: { b: StakeholderBriefContent }) {
       </Section>
 
       {b.messageGuide.length ? (
-        <Section n={10} title="Message guide">
+        <Section n={10 + k} title="Message guide">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="bg-[var(--chip-bg)] text-left">

@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { getDb } from "../../db/client.js";
 import {
   accountIdentities,
@@ -76,7 +76,7 @@ export async function handleCsvImport(payload: {
   const existing = await db
     .select({ id: accounts.id, name: accounts.name, domain: accounts.domain })
     .from(accounts)
-    .where(and(eq(accounts.workspaceId, job.workspaceId), eq(accounts.tenantId, job.tenantId)));
+    .where(and(eq(accounts.workspaceId, job.workspaceId), eq(accounts.tenantId, job.tenantId), isNull(accounts.deletedAt)));
   const byDomain = new Map<string, { id: string; name: string }>();
   const byName = new Map<string, { id: string; name: string; domain: string | null }>();
   for (const a of existing) {

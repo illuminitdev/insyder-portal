@@ -43,6 +43,12 @@ export const accounts = pgTable(
     ownerUserId: text("owner_user_id"),
     /** Set when this record was merged into another account (merge history, R2) */
     mergedIntoId: text("merged_into_id"),
+    /** Archived as not relevant: hidden from lists by default, restorable, and not re-added by research */
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    archivedBy: text("archived_by"),
+    /** Deleted (soft): hidden everywhere; research does not bring it back */
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: text("deleted_by"),
     version: integer("version").notNull().default(1),
     /** AI-written "why now?" summary (Exa Answer). Untrusted: shown with its citations, never as evidence */
     whyNowText: text("why_now_text"),

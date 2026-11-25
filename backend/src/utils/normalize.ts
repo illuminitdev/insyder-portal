@@ -12,6 +12,70 @@ export function normalizeDomain(raw?: string | null): string | null {
 }
 
 /**
+ * Sites that host pages about many companies (social networks, data providers, registries,
+ * job boards). Their domain says nothing about which company a page is about, so it must never
+ * become an account's domain: a company without a website of its own would otherwise be given
+ * "linkedin.com", and every later result for another such company would be filed under it.
+ */
+export const SHARED_PLATFORM_DOMAINS: readonly string[] = [
+  // Social and content
+  "linkedin.com",
+  "lnkd.in",
+  "facebook.com",
+  "fb.com",
+  "instagram.com",
+  "twitter.com",
+  "x.com",
+  "youtube.com",
+  "tiktok.com",
+  "threads.net",
+  "medium.com",
+  "substack.com",
+  "github.com",
+  "reddit.com",
+  "wikipedia.org",
+  "google.com",
+  "linktr.ee",
+  // Company data, people data and review sites
+  "crunchbase.com",
+  "zoominfo.com",
+  "apollo.io",
+  "rocketreach.co",
+  "leadiq.com",
+  "lusha.com",
+  "signalhire.com",
+  "contactout.com",
+  "pitchbook.com",
+  "dnb.com",
+  "owler.com",
+  "craft.co",
+  "cbinsights.com",
+  "glassdoor.com",
+  "glassdoor.co.uk",
+  "indeed.com",
+  "trustpilot.com",
+  "yelp.com",
+  "bloomberg.com",
+  // Company registries
+  "opencorporates.com",
+  "company-information.service.gov.uk",
+  "companieshouse.gov.uk",
+  "endole.co.uk",
+  "companycheck.co.uk",
+];
+
+export function isSharedPlatformDomain(domain: string | null | undefined): boolean {
+  if (!domain) return false;
+  return SHARED_PLATFORM_DOMAINS.some((p) => domain === p || domain.endsWith(`.${p}`));
+}
+
+/** A company's own domain from a website the research gave; null when missing or a shared platform. */
+export function companyDomain(raw?: string | null): string | null {
+  const d = normalizeDomain(raw);
+  return d && !isSharedPlatformDomain(d) ? d : null;
+}
+
+/**
  * A website the user typed ("example.com", "www.example.com/about") → "https://example.com/about".
  * Returns null when it isn't a usable public web address.
  */

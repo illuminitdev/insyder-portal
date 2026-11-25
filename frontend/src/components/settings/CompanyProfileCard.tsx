@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Building2, ExternalLink, Globe, Loader2, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Building2, ChevronDown, ChevronUp, ExternalLink, Globe, Loader2, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -68,6 +68,8 @@ export function CompanyProfileCard({
   const [picked, setPicked] = useState<Partial<Record<SectionKey, boolean>>>({});
   const [makeDefault, setMakeDefault] = useState(true);
   const [reanalyse, setReanalyse] = useState(false);
+  // Once the website is analysed the card stays compact (title + website); details open on request
+  const [expanded, setExpanded] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -85,6 +87,12 @@ export function CompanyProfileCard({
 
   // While the website is being read, check back every few seconds
   const running = state?.status === "running";
+  // A new analysis that finishes while the page is open opens its details, so the suggestions can be reviewed
+  const wasRunning = useRef(false);
+  useEffect(() => {
+    if (wasRunning.current && !running && state?.profile) setExpanded(true);
+    wasRunning.current = running;
+  }, [running, state?.profile]);
   useEffect(() => {
     if (!running) return;
     const t = setInterval(() => void load(), POLL_MS);
@@ -123,6 +131,7 @@ export function CompanyProfileCard({
       setNotice(
         `Applied to your settings${r.playbook ? `, and created the playbook “${r.playbook.name}”` : ""}. Check the details below and edit anything that isn't right.`,
       );
+      setExpanded(false);
       onApplied();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not apply the suggestions");
@@ -142,6 +151,8 @@ export function CompanyProfileCard({
   const rows = profile ? suggestionRows(profile) : [];
   const anyPicked = rows.some((r) => picked[r.key]);
   const showForm = !running && (!profile || reanalyse);
+  const compact = Boolean(profile) && !running && !reanalyse;
+  const site = state.website?.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
   return (
     <Card className={firstTime && !profile ? "!border-[var(--brand)] shadow-[0_0_0_1px_var(--brand)]" : undefined}>
@@ -153,18 +164,44 @@ export function CompanyProfileCard({
           <div>
             {firstTime && !profile ? <Badge tone="red">Start here</Badge> : null}
             <h2 className="mt-1 text-[17px] font-semibold">Your company profile</h2>
-            <p className="mt-0.5 text-sm text-[var(--muted)]">
-              Give us your website and Insyder reads it to understand your company: what you sell, who buys it and
-              which buying signals to watch. You review every suggestion before it is used.
-            </p>
+            {compact ? (
+              <p className="mt-0.5 text-sm text-[var(--muted)]">
+                Website:{" "}
+                {state.website ? (
+                  <a
+                    href={state.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-medium text-[var(--brand-active)] hover:underline"
+                  >
+                    {site} <ExternalLink size={12} aria-hidden />
+                  </a>
+                ) : (
+                  "not set"
+                )}
+              </p>
+            ) : (
+              <p className="mt-0.5 text-sm text-[var(--muted)]">
+                Give us your website and Insyder reads it to understand your company: what you sell, who buys it and
+                which buying signals to watch. You review every suggestion before it is used.
+              </p>
+            )}
           </div>
         </div>
-        {profile && !running && !reanalyse ? (
-          <Button onClick={() => setReanalyse(true)}>
-            <span className="inline-flex items-center gap-1.5">
-              <RefreshCw size={15} aria-hidden /> Analyse again
-            </span>
-          </Button>
+        {compact ? (
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <Button onClick={() => setExpanded((x) => !x)} aria-expanded={expanded}>
+              <span className="inline-flex items-center gap-1.5">
+                {expanded ? <ChevronUp size={15} aria-hidden /> : <ChevronDown size={15} aria-hidden />}
+                {expanded ? "Hide details" : "View details"}
+              </span>
+            </Button>
+            <Button onClick={() => setReanalyse(true)}>
+              <span className="inline-flex items-center gap-1.5">
+                <RefreshCw size={15} aria-hidden /> Analyse again
+              </span>
+            </Button>
+          </div>
         ) : null}
       </div>
 
@@ -224,7 +261,7 @@ export function CompanyProfileCard({
         </p>
       ) : null}
 
-      {profile && !running ? (
+      {profile && !running && expanded ? (
         <div className="mt-5 space-y-5 border-t border-[var(--line)] pt-5">
           {/* What we learned */}
           <div className="space-y-3">

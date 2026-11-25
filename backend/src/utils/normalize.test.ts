@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   canonicalizeUrl,
+  companyDomain,
+  isSharedPlatformDomain,
   normalizeWebsite,
   companyNameKey,
   countryFromUrl,
@@ -65,5 +67,22 @@ describe("normalizeWebsite", () => {
     expect(normalizeWebsite("not a site")).toBeNull();
     expect(normalizeWebsite("ftp://example.com")).toBeNull();
     expect(normalizeWebsite("localhost")).toBeNull();
+  });
+});
+
+describe("companyDomain", () => {
+  it("keeps a company's own domain", () => {
+    expect(companyDomain("https://www.acme.co.uk/about")).toBe("acme.co.uk");
+    expect(companyDomain("box.com")).toBe("box.com");
+  });
+
+  it("never gives a company a shared platform's domain", () => {
+    expect(companyDomain("https://www.linkedin.com/company/charles-simon-associates")).toBeNull();
+    expect(companyDomain("uk.linkedin.com/in/someone")).toBeNull();
+    expect(companyDomain("crunchbase.com/organization/acme")).toBeNull();
+    expect(companyDomain("find-and-update.company-information.service.gov.uk/company/123")).toBeNull();
+    expect(companyDomain("")).toBeNull();
+    expect(isSharedPlatformDomain("x.com")).toBe(true);
+    expect(isSharedPlatformDomain("box.com")).toBe(false);
   });
 });

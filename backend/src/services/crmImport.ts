@@ -68,7 +68,7 @@ export async function loadImportContext(tenantId: string, workspaceId: string, p
     db
       .select({ id: accounts.id, name: accounts.name, domain: accounts.domain })
       .from(accounts)
-      .where(and(eq(accounts.workspaceId, workspaceId), eq(accounts.tenantId, tenantId), isNull(accounts.mergedIntoId))),
+      .where(and(eq(accounts.workspaceId, workspaceId), eq(accounts.tenantId, tenantId), isNull(accounts.mergedIntoId), isNull(accounts.deletedAt))),
     db
       .select({ entityId: crmMappings.entityId, externalId: crmMappings.externalId })
       .from(crmMappings)

@@ -70,7 +70,7 @@ async function sdrReport(m: MembershipContext, workspaceId: string, { fromDate, 
   const owned = await db
     .select({ id: accounts.id, acceptanceState: accounts.acceptanceState })
     .from(accounts)
-    .where(and(scope(accounts), eq(accounts.ownerUserId, m.userId), isNull(accounts.mergedIntoId)));
+    .where(and(scope(accounts), eq(accounts.ownerUserId, m.userId), isNull(accounts.mergedIntoId), isNull(accounts.archivedAt), isNull(accounts.deletedAt)));
 
   return {
     openTasks: open.length,
@@ -222,7 +222,7 @@ async function reviewerReport(m: MembershipContext, workspaceId: string, { fromD
   const queue = await db
     .select({ id: accounts.id, updatedAt: accounts.updatedAt })
     .from(accounts)
-    .where(and(scope(accounts), eq(accounts.acceptanceState, "ready_for_review"), isNull(accounts.mergedIntoId)));
+    .where(and(scope(accounts), eq(accounts.acceptanceState, "ready_for_review"), isNull(accounts.mergedIntoId), isNull(accounts.archivedAt), isNull(accounts.deletedAt)));
   const now = Date.now();
   const oldestWaitingDays = queue.length
     ? Math.floor((now - Math.min(...queue.map((q) => q.updatedAt.getTime()))) / 86400000)

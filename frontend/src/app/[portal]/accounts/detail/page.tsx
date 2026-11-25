@@ -17,7 +17,7 @@ import { TaskQueue } from "@/components/tasks/TaskQueue";
 import { usePortal } from "@/hooks/usePortal";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useSkipReview } from "@/hooks/useSkipReview";
-import { getBrief, listPeople, type Brief } from "@/lib/api/accounts";
+import { deleteAccount, getBrief, listPeople, setAccountArchived, type Brief } from "@/lib/api/accounts";
 import { listTasks, patchTask, type Task } from "@/lib/api/tasks";
 import { listResearchRuns, startResearchRun, type DiscoveryRow } from "@/lib/api/research";
 import { DiscoveryResults } from "@/components/research/DiscoveryResults";
@@ -28,7 +28,8 @@ import { QualificationBrief } from "@/components/qualification/QualificationBrie
 import { getOpportunity, type Opportunity } from "@/lib/api/opportunities";
 import { getCrmStatus, type CrmAccountStatus } from "@/lib/api/crm";
 import { listAccountPeople, type Contact } from "@/lib/api/contacts";
-import { Building2, Check, ChevronRight, EllipsisVertical, ListChecks, Lock, Mail, Send, Share2, Zap } from "lucide-react";
+import { Archive, ArchiveRestore, Building2, Check, ChevronRight, EllipsisVertical, ListChecks, Lock, Mail, Send, Share2, Trash2, Zap } from "lucide-react";
+import { Modal } from "@/components/ui/Modal";
 import {
   AccountFactsPanel,
   AccountHero,
@@ -126,6 +127,10 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
   const [similarRunId, setSimilarRunId] = useState<string | null>(null);
   const [similarRows, setSimilarRows] = useState<DiscoveryRow[] | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [archiveBusy, setArchiveBusy] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   // Research start feedback: the request in flight, and an error shown next to the run's progress
   const [startingResearch, setStartingResearch] = useState(false);
   const [researchError, setResearchError] = useState<string | null>(null);
@@ -1035,6 +1040,31 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
         : null;
   /** disabledReason: shown greyed out with this hint instead of being hidden */
   type MenuItem = { label: string; icon?: React.ReactNode; onClick: () => void; disabledReason?: string };
+
+  async function setArchived(archived: boolean) {
+    setArchiveBusy(true);
+    setLocalError(null);
+    try {
+      await setAccountArchived(accountId, workspaceId, archived);
+      await refresh();
+    } catch (e) {
+      setLocalError(e instanceof Error ? e.message : `Could not ${archived ? "archive" : "restore"} the account`);
+    } finally {
+      setArchiveBusy(false);
+    }
+  }
+
+  async function confirmDelete() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount(accountId, workspaceId);
+      router.push(portalHref("/accounts/watchlist"));
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Could not delete the account");
+      setDeleting(false);
+    }
+  }
   const draftsLocked = reviewed === 0 ? "Review at least one evidence item first (Research step)" : undefined;
   const menuItems: MenuItem[] = (
     [
@@ -1092,6 +1122,29 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
         icon: <Share2 size={16} className="text-[var(--plum)]" />,
         onClick: () => void copyLink(),
       },
+      can("import")
+        ? account.archivedAt
+          ? {
+              label: "Restore account",
+              icon: <ArchiveRestore size={16} className="text-[var(--plum)]" />,
+              onClick: () => void setArchived(false),
+            }
+          : {
+              label: "Archive account (not relevant)",
+              icon: <Archive size={16} className="text-[var(--plum)]" />,
+              onClick: () => void setArchived(true),
+            }
+        : null,
+      can("manage_settings")
+        ? {
+            label: "Delete account",
+            icon: <Trash2 size={16} className="text-[var(--danger)]" />,
+            onClick: () => {
+              setDeleteError(null);
+              setDeleteOpen(true);
+            },
+          }
+        : null,
     ] as Array<MenuItem | null>
   ).filter((i): i is MenuItem => Boolean(i));
 
@@ -1227,6 +1280,64 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
       </div>
 
       <AccountHero brief={brief} crm={crmStatus} actions={actions} menu={moreMenu} />
+
+      {account.archivedAt ? (
+        <div
+          role="status"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--card-line)] bg-white p-3.5 text-sm text-[var(--plum)]"
+        >
+          <span className="inline-flex items-center gap-2">
+            <Archive size={16} className="text-[var(--brand-active)]" aria-hidden />
+            Archived {formatDate(account.archivedAt)} as not relevant. It is hidden from your account lists and research
+            doesn&apos;t add new results to it.
+          </span>
+          {can("import") ? (
+            <Button onClick={() => void setArchived(false)} disabled={archiveBusy}>
+              <span className="inline-flex items-center gap-1.5">
+                <ArchiveRestore size={14} aria-hidden />
+                {archiveBusy ? "Restoring…" : "Restore"}
+              </span>
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
+      <Modal
+        open={deleteOpen}
+        onClose={() => (deleting ? undefined : setDeleteOpen(false))}
+        title={`Delete ${account.name}?`}
+        description="The account, its evidence, people and drafts disappear for everyone in this workspace, open tasks on it are cancelled, and research won't add this company again. To keep it but hide it, archive it instead."
+        size="sm"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setDeleteOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            {!account.archivedAt && can("import") ? (
+              <Button
+                onClick={() => {
+                  setDeleteOpen(false);
+                  void setArchived(true);
+                }}
+                disabled={deleting}
+              >
+                Archive instead
+              </Button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void confirmDelete()}
+              disabled={deleting}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-transparent bg-[var(--danger)] px-3.5 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
+            >
+              <Trash2 size={14} aria-hidden />
+              {deleting ? "Deleting…" : "Delete account"}
+            </button>
+          </div>
+        }
+      >
+        {deleteError ? <p className="text-sm text-[var(--danger)]">{deleteError}</p> : null}
+      </Modal>
 
       {localError ? <ErrorState message={localError} /> : null}
 

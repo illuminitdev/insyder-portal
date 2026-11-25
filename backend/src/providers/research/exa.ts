@@ -1,7 +1,7 @@
 import { Exa, WebsetSearchBehavior, type CreateEnrichmentParametersFormat } from "exa-js";
 import { getEnv, isExaConfigured } from "../../config/env.js";
 import { providerNotConfigured } from "../../utils/errors.js";
-import { canonicalizeUrl, companyNameKey, countryFromUrl, hostnameOf, normalizeCountry, normalizeDomain } from "../../utils/normalize.js";
+import { canonicalizeUrl, companyDomain, companyNameKey, countryFromUrl, hostnameOf, normalizeCountry, normalizeDomain } from "../../utils/normalize.js";
 import { isKnownPublisher, withScoringHints } from "../../services/signalScoring.js";
 import {
   NormalizedProviderError,
@@ -147,6 +147,11 @@ type Subject = {
 };
 
 
+/** The website as given, unless it is a shared platform (LinkedIn, Crunchbase, a registry...) rather than the company's own site. */
+export function ownWebsite(website: string | null | undefined): string | null {
+  return website && companyDomain(website) ? website : null;
+}
+
 export function parseSubject(summary: unknown): Subject | null {
   if (typeof summary !== "string" || !summary.trim()) return null;
   try {
@@ -159,7 +164,8 @@ export function parseSubject(summary: unknown): Subject | null {
     const signalType = str(raw.signalType, 40);
     return {
       companyName: str(raw.companyName, 200),
-      companyWebsite: str(raw.companyWebsite, 200),
+      // A LinkedIn or directory page is not the company's website: drop it so the company is matched by name
+      companyWebsite: ownWebsite(str(raw.companyWebsite, 200)),
       signalType: signalType && (SIGNAL_TYPES as readonly string[]).includes(signalType) && signalType !== "other" ? signalType : null,
       eventSummary: str(raw.eventSummary, 400),
     };
@@ -497,7 +503,7 @@ export function normalizeWebsetItems(
       matchRationale: `List check: ${satisfied.length} of ${evals.length} criteria met with cited sources`,
       providerRequestRef: websetId,
       signalKind: satisfied.length && satisfied.length === evals.length ? "webset_match" : "web_signal",
-      subject: { companyName: name.slice(0, 200), companyWebsite: website, eventSummary: (p.description ?? p.company?.about ?? "").slice(0, 400) || null },
+      subject: { companyName: name.slice(0, 200), companyWebsite: ownWebsite(website), eventSummary: (p.description ?? p.company?.about ?? "").slice(0, 400) || null },
       ...(() => {
         const contact = contactFromEnrichments(row.enrichments, contactFieldById);
         return contact ? { contact } : {};
@@ -735,7 +741,7 @@ export class ExaResearchProvider implements ResearchProvider {
       if (!host || isKnownPublisher(host) || !i.subject?.companyName) return [];
       // Only the company's own site counts: a directory or profile page *about* a company
       // (e.g. leadiq.com/company/acme) must not give that company the directory's domain
-      const own = normalizeDomain(i.subject.companyWebsite);
+      const own = companyDomain(i.subject.companyWebsite);
       if (!own || !sameSite(host, own)) return [];
       // A page about the seed company itself is not a lookalike
       if (seedDomain && sameSite(own, seedDomain)) return [];
@@ -928,7 +934,7 @@ export class ExaResearchProvider implements ResearchProvider {
         if (seenUrls.has(i.canonicalUrl)) continue;
         seenUrls.add(i.canonicalUrl);
         const name = i.subject?.companyName?.trim();
-        const domain = normalizeDomain(i.subject?.companyWebsite);
+        const domain = companyDomain(i.subject?.companyWebsite);
         // A list holds companies: articles that name no single company are dropped
         if (!name) continue;
         if (domain && excluded.has(domain)) continue;

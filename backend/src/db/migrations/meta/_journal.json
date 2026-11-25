@@ -162,6 +162,13 @@
       "when": 1794500000000,
       "tag": "0022_add_tenant_deleted_at",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794600000000,
+      "tag": "0023_account_archive_and_shared_domains",
+      "breakpoints": true
     }
   ]
 }

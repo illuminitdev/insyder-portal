@@ -18,4 +18,10 @@ describe("parseSubject", () => {
     expect(parseSubject("not json")).toBeNull();
     expect(parseSubject(undefined)).toBeNull();
   });
+
+  it("drops a LinkedIn or directory page given as the company website", () => {
+    const s = parseSubject(JSON.stringify({ companyName: "Charles Simon Associates", companyWebsite: "linkedin.com/company/csa" }));
+    expect(s?.companyName).toBe("Charles Simon Associates");
+    expect(s?.companyWebsite).toBeNull();
+  });
 });

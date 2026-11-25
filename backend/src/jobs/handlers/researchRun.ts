@@ -29,7 +29,7 @@ import { BRIEF_MODE } from "../../services/stakeholderBriefs.js";
 import { persistNormalizedEvidence } from "../../services/evidence.js";
 import { activeSuppressionSet, isSuppressed } from "../../services/suppressions.js";
 import { newId } from "../../utils/ids.js";
-import { companyNameKey, normalizeDomain } from "../../utils/normalize.js";
+import { companyDomain, companyNameKey, normalizeDomain } from "../../utils/normalize.js";
 import { redactString } from "../../utils/redact.js";
 
 type FetchedResult = { stage: "fetched"; providerRunId: string; items: NormalizedEvidenceItem[] };
@@ -67,6 +67,15 @@ export async function handleResearchRun(
 
   if (run.accountId) {
     const [acct] = await db.select().from(accounts).where(eq(accounts.id, run.accountId)).limit(1);
+    // Deleted while the run was queued: nothing to research
+    if (acct?.deletedAt) {
+      await refundResearchBudget(run.tenantId, run.budgetReserved);
+      await db
+        .update(researchRuns)
+        .set({ status: "cancelled", errorCode: "account_deleted", errorMessage: "Account was deleted", completedAt: new Date(), budgetActual: 0 })
+        .where(eq(researchRuns.id, run.id));
+      return;
+    }
     if (acct?.domain && (await isSuppressed(run.workspaceId, acct.domain))) {
       await refundResearchBudget(run.tenantId, run.budgetReserved);
       await db
@@ -325,21 +334,34 @@ async function accountsFromSignals(
   const db = getDb();
   const suppressed = await activeSuppressionSet(run.workspaceId);
   const existing = await db
-    .select({ id: accounts.id, name: accounts.name, domain: accounts.domain, country: accounts.country })
+    .select({
+      id: accounts.id,
+      name: accounts.name,
+      domain: accounts.domain,
+      country: accounts.country,
+      archivedAt: accounts.archivedAt,
+      deletedAt: accounts.deletedAt,
+    })
     .from(accounts)
     .where(and(eq(accounts.workspaceId, run.workspaceId), eq(accounts.tenantId, run.tenantId), isNull(accounts.mergedIntoId)));
-  type Known = { id: string; name: string; domain: string | null; country: string | null };
-  const byDomain = new Map<string, Known>(existing.filter((a) => a.domain).map((a) => [a.domain!, a]));
-  const byName = new Map<string, Known>(existing.map((a) => [companyNameKey(a.name), a]));
+  type Known = { id: string; name: string; domain: string | null; country: string | null; dismissed?: boolean };
+  // Archived and deleted accounts are still matched, so a company the team dismissed is not added
+  // again; live accounts come last so they win when a live and a dismissed record share a key.
+  const known: Known[] = existing
+    .map((a) => ({ id: a.id, name: a.name, domain: a.domain, country: a.country, dismissed: Boolean(a.archivedAt || a.deletedAt) }))
+    .sort((a, b) => Number(b.dismissed) - Number(a.dismissed));
+  const byDomain = new Map<string, Known>(known.filter((a) => a.domain).map((a) => [a.domain!, a]));
+  const byName = new Map<string, Known>(known.map((a) => [companyNameKey(a.name), a]));
 
   type Group = Known & { isNew: boolean; review: boolean; items: NormalizedEvidenceItem[] };
   const groups = new Map<string, Group>();
   let unmatched = 0;
   let skippedSuppressed = 0;
+  let skippedDismissed = 0;
 
   for (const item of items) {
     const name = item.subject?.companyName?.trim() || null;
-    const domain = normalizeDomain(item.subject?.companyWebsite);
+    const domain = companyDomain(item.subject?.companyWebsite);
     if (!name && !domain) {
       unmatched++;
       continue;
@@ -358,6 +380,11 @@ async function accountsFromSignals(
         target = sameName;
         review = true;
       }
+    }
+
+    if (target?.dismissed) {
+      skippedDismissed++;
+      continue;
     }
 
     let isNew = false;
@@ -466,6 +493,7 @@ async function accountsFromSignals(
     rows,
     unmatched,
     skippedSuppressed,
+    skippedDismissed,
     noResults: items.length === 0,
   };
 }

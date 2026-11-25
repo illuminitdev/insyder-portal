@@ -45,7 +45,7 @@ export async function platformRoutes(app: FastifyInstance) {
         .select({ tenantId: accounts.tenantId, n: count() })
         .from(accounts)
         .innerJoin(workspaces, eq(accounts.workspaceId, workspaces.id))
-        .where(isNull(workspaces.deletedAt))
+        .where(and(isNull(workspaces.deletedAt), isNull(accounts.deletedAt)))
         .groupBy(accounts.tenantId),
       // Which CRM each company's workspaces connected (provider and status only; never the credential).
       // A company counts as connected when any live workspace is; a healthy connection is shown first.
@@ -231,7 +231,7 @@ export async function platformRoutes(app: FastifyInstance) {
       db
         .select({ workspaceId: accounts.workspaceId, n: count() })
         .from(accounts)
-        .where(eq(accounts.tenantId, tenantId))
+        .where(and(eq(accounts.tenantId, tenantId), isNull(accounts.deletedAt)))
         .groupBy(accounts.workspaceId),
       db
         .selectDistinct({ userId: users.id, name: users.name, email: users.email })
@@ -368,7 +368,7 @@ export async function platformRoutes(app: FastifyInstance) {
         .from(memberships)
         .where(isNull(memberships.revokedAt))
         .groupBy(memberships.workspaceId),
-      db.select({ workspaceId: accounts.workspaceId, n: count() }).from(accounts).groupBy(accounts.workspaceId),
+      db.select({ workspaceId: accounts.workspaceId, n: count() }).from(accounts).where(isNull(accounts.deletedAt)).groupBy(accounts.workspaceId),
     ]);
     const members = new Map(memberCounts.map((r) => [r.workspaceId, Number(r.n)]));
     const accs = new Map(accountCounts.map((r) => [r.workspaceId, Number(r.n)]));
