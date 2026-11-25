@@ -14,7 +14,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
-  ShieldCheck,
   UserPlus,
   Users,
   X,
@@ -177,19 +176,8 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
-        {/* Scope card, in place of the workspace switcher */}
-        <div className="px-4">
-          <div className="flex w-full items-center gap-3 rounded-[14px] border border-white/10 bg-white/[0.06] px-4 py-3">
-            <ShieldCheck size={17} className="shrink-0 text-[#7FD3CB]" strokeWidth={2} aria-hidden />
-            <span className="min-w-0 flex-1">
-              <span className="block text-[10.5px] font-bold uppercase tracking-[0.1em] text-[#8FA2B5]">Scope</span>
-              <span className="block truncate text-[15px] font-semibold leading-tight text-white">All companies</span>
-            </span>
-          </div>
-        </div>
-
         {/* Navigation */}
-        <nav aria-label="Primary" className="mt-5 flex flex-1 flex-col gap-1 overflow-y-auto px-4 pb-4">
+        <nav aria-label="Primary" className="mt-2 flex flex-1 flex-col gap-1 overflow-y-auto px-4 pb-4">
           {NAV.map((item) => {
             const active = item === current;
             const Icon = item.Icon;
