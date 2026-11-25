@@ -13,6 +13,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   EXA_API_KEY: z.string().optional().default(""), 
   SECRETS_ENCRYPTION_KEY: z.string().optional().default(""),
+  /** Shared key the marketing site (Insyder repo) sends to forward "Book a demo" requests. Empty: intake off. */
+  DEMO_INTAKE_KEY: z.string().optional().default(""),
   /** "true": the API process also runs the background job worker (no separate worker service) */
   RUN_WORKER_IN_API: z
     .string()

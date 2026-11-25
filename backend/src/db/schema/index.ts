@@ -13,5 +13,6 @@ export * from "./opportunities.js";
 export * from "./contacts.js";
 export * from "./crm.js";
 export * from "./accessRequests.js";
+export * from "./demoRequests.js";
 export * from "./notifications.js";
 export * from "./stakeholderBriefs.js";

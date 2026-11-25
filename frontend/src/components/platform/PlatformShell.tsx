@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Building2,
+  CalendarCheck,
   ChevronRight,
   Shapes,
   LayoutDashboard,
@@ -21,7 +22,7 @@ import {
 } from "lucide-react";
 import { logout, me, type User } from "@/lib/auth/session";
 import { ApiError } from "@/lib/api/client";
-import { ACCESS_REQUESTS_CHANGED, listAccessRequests } from "@/lib/api/platform";
+import { ACCESS_REQUESTS_CHANGED, DEMO_REQUESTS_CHANGED, listAccessRequests, listDemoRequests } from "@/lib/api/platform";
 import { LoadingState } from "@/components/common/LoadingState";
 import { AccountMenu } from "@/components/layout/AppShell";
 import { InsyderMark } from "@/components/common/InsyderLogo";
@@ -35,6 +36,7 @@ const NAV: Array<{ href: string; label: string; Icon: LucideIcon; exact?: boolea
   { href: "/platform/workspaces", label: "Workspaces", Icon: Shapes },
   { href: "/platform/users", label: "Users", Icon: Users },
   { href: "/platform/access-requests", label: "Access requests", Icon: UserPlus },
+  { href: "/platform/demo-requests", label: "Demo requests", Icon: CalendarCheck },
   { href: "/platform/settings", label: "Settings", Icon: Settings },
 ];
 
@@ -49,17 +51,27 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useSidebarCollapsed();
   // Pending sign-up requests, shown as a count on the "Access requests" nav item
   const [pendingRequests, setPendingRequests] = useState(0);
+  // New "Book a demo" submissions, shown as a count on the "Demo requests" nav item
+  const [newDemoRequests, setNewDemoRequests] = useState(0);
 
-  const refreshPending = () =>
+  const refreshPending = () => {
     void listAccessRequests("pending")
       .then((r) => setPendingRequests(r.counts.pending))
       .catch(() => undefined);
+    void listDemoRequests("new")
+      .then((r) => setNewDemoRequests(r.counts.new))
+      .catch(() => undefined);
+  };
 
   useEffect(() => {
     if (!user) return;
     refreshPending();
     window.addEventListener(ACCESS_REQUESTS_CHANGED, refreshPending);
-    return () => window.removeEventListener(ACCESS_REQUESTS_CHANGED, refreshPending);
+    window.addEventListener(DEMO_REQUESTS_CHANGED, refreshPending);
+    return () => {
+      window.removeEventListener(ACCESS_REQUESTS_CHANGED, refreshPending);
+      window.removeEventListener(DEMO_REQUESTS_CHANGED, refreshPending);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
   useActiveInterval(refreshPending, 60_000, Boolean(user));
@@ -200,14 +212,22 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
                   className={`shrink-0 ${active ? "text-[#7FD3CB]" : "text-[#8FA2B5] group-hover:text-white"}`}
                 />
                 {item.label}
-                {item.href === "/platform/access-requests" && pendingRequests > 0 ? (
-                  <span
-                    className="ml-auto rounded-full bg-[var(--brand-active)] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-white"
-                    aria-label={`${pendingRequests} pending`}
-                  >
-                    {pendingRequests}
-                  </span>
-                ) : null}
+                {(() => {
+                  const badge =
+                    item.href === "/platform/access-requests"
+                      ? { n: pendingRequests, label: "pending" }
+                      : item.href === "/platform/demo-requests"
+                        ? { n: newDemoRequests, label: "new" }
+                        : null;
+                  return badge && badge.n > 0 ? (
+                    <span
+                      className="ml-auto rounded-full bg-[var(--brand-active)] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-white"
+                      aria-label={`${badge.n} ${badge.label}`}
+                    >
+                      {badge.n}
+                    </span>
+                  ) : null;
+                })()}
               </Link>
             );
           })}
