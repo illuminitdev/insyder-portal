@@ -38,7 +38,7 @@ const TYPE_LOOK: Record<Task["type"], { Icon: LucideIcon; tile: string }> = {
   review: { Icon: ClipboardCheck, tile: "bg-[var(--badge-blue-bg)] text-[var(--badge-blue-fg)]" },
   call: { Icon: Phone, tile: "bg-[var(--badge-green-bg)] text-[var(--badge-green-fg)]" },
   email: { Icon: Mail, tile: "bg-[var(--badge-amber-bg)] text-[var(--badge-amber-fg)]" },
-  follow_up: { Icon: RotateCw, tile: "bg-[var(--chip-bg)] text-[var(--navy)]" },
+  follow_up: { Icon: RotateCw, tile: "bg-[var(--chip-bg)] text-[var(--brand-text)]" },
 };
 
 const DAY = 86_400_000;
@@ -258,7 +258,7 @@ export function TaskQueue({
                     <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">{t.instruction ?? "No instruction"}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12.5px] text-[var(--muted)]">
                       <span className="inline-flex items-center gap-1.5" title="Owner">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--navy)] text-[9.5px] font-semibold text-white" aria-hidden>
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--navy)] text-[9.5px] font-semibold text-[var(--on-brand)]" aria-hidden>
                           {initialsOf(owner)}
                         </span>
                         <span className="font-medium text-[var(--foreground)]">{owner}</span>

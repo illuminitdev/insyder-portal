@@ -52,7 +52,7 @@ function Section({ n, title, children }: { n?: number; title: string; children: 
   return (
     <section className="brief-section rounded-[16px] border border-[var(--card-line)] bg-white p-5 shadow-[var(--card-shadow)] print:shadow-none">
       <h2 className="brief-section-head text-[17px] font-semibold">
-        {n ? <span className="mr-2 text-[var(--brand)]">{n}.</span> : null}
+        {n ? <span className="mr-2 text-[var(--brand-text)]">{n}.</span> : null}
         {title}
       </h2>
       <div className="mt-3 space-y-3 text-sm leading-relaxed">{children}</div>
@@ -127,7 +127,7 @@ function eventDate(d: string) {
 function SourceLink({ url, children }: { url: string | null; children: React.ReactNode }) {
   if (!url) return <>{children}</>;
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="text-[#4f46c8] hover:underline">
+    <a href={url} target="_blank" rel="noopener noreferrer" className="text-[var(--link)] hover:underline">
       {children}
     </a>
   );
@@ -243,9 +243,9 @@ function BriefBody({ b }: { b: StakeholderBriefContent }) {
           <Bullets title="Likely controls or shapes" items={b.whoTheyAre.controls} />
           <Bullets title="Likely does not control directly" items={b.whoTheyAre.doesNotControl} />
         </div>
-        <div className="brief-tile rounded-[12px] bg-[#f8f7fd] p-4">
+        <div className="brief-tile rounded-[12px] bg-[var(--soft)] p-4">
           <h3 className="flex items-center gap-2 text-[14px] font-semibold">
-            <Lightbulb size={15} className="text-[#4f46c8]" aria-hidden /> Cognitive &amp; commercial overlay
+            <Lightbulb size={15} className="text-[var(--link)]" aria-hidden /> Cognitive &amp; commercial overlay
           </h3>
           <div className="mt-2 space-y-2">
             <Para label="Likely evaluation lens" text={b.overlay.evaluationLens} />
@@ -379,7 +379,7 @@ function BriefBody({ b }: { b: StakeholderBriefContent }) {
             {b.sources.map((s) => (
               <li key={s.url} className="flex items-start gap-1.5 break-all text-xs">
                 <ExternalLink size={12} className="mt-0.5 shrink-0 text-[var(--muted)] print:hidden" aria-hidden />
-                <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-[#4f46c8] hover:underline">
+                <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-[var(--link)] hover:underline">
                   {s.title || s.url}
                 </a>
                 {s.title ? <span className="hidden text-[var(--muted)] print:inline"> ({s.url})</span> : null}
@@ -423,7 +423,7 @@ function MeetingForm({
         }}
       >
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-tint)] text-[var(--brand)]">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-tint)] text-[var(--brand-text)]">
             <Sparkles size={20} strokeWidth={1.75} aria-hidden />
           </span>
           <div>
@@ -564,7 +564,7 @@ function StakeholderBriefView({ workspaceId, accountId, contactId }: { workspace
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--brand)]">Contact role hypothesis</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--brand-text)]">Contact role hypothesis</p>
           <h1 className="mt-1 text-[26px] font-semibold leading-tight">
             {data.contact.name}
             {companyName ? <span className="font-normal text-[var(--muted)]">, {companyName}</span> : null}
@@ -619,7 +619,7 @@ function StakeholderBriefView({ workspaceId, accountId, contactId }: { workspace
         </div>
       </div>
 
-      <p className="brief-tile rounded-[12px] border border-[var(--card-line)] bg-[#f8f7fd] p-3.5 text-xs leading-relaxed text-[var(--muted)]">
+      <p className="brief-tile rounded-[12px] border border-[var(--card-line)] bg-[var(--soft)] p-3.5 text-xs leading-relaxed text-[var(--muted)]">
         <span className="font-semibold text-[var(--foreground)]">How to read this: </span>
         built from public sources, the account research and what you told us about the meeting. It is preparation, not a
         personality diagnosis: every point is a working hypothesis to check in conversation and correct over time. Nothing
@@ -629,7 +629,7 @@ function StakeholderBriefView({ workspaceId, accountId, contactId }: { workspace
       {running ? (
         <Card>
           <div className="flex items-center gap-3 text-sm" role="status">
-            <Loader2 size={20} className="animate-spin text-[var(--brand)]" aria-hidden />
+            <Loader2 size={20} className="animate-spin text-[var(--brand-text)]" aria-hidden />
             <div className="flex-1">
               <p className="font-semibold">Researching {data.contact.name} and writing the role hypothesis…</p>
               <p className="text-xs text-[var(--muted)]">This usually takes a few minutes. You can leave this page; it keeps going.</p>

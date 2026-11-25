@@ -107,7 +107,7 @@ function ScoreBadge({ score }: { score: number | null }) {
             />
           ) : null}
         </svg>
-        <Zap size={15} className={high ? "text-[var(--brand)]" : "text-[var(--plum-muted)]"} />
+        <Zap size={15} className={high ? "text-[var(--brand-text)]" : "text-[var(--plum-muted)]"} />
       </span>
     </div>
   );
@@ -204,7 +204,7 @@ export function AccountIntelligenceFeed({
     <div className="w-full min-w-0 max-w-full space-y-6">
       {/* KPI cards */}
       <div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
-        <Kpi label="Total accounts" Icon={Building2} tone="bg-[var(--lilac)] text-[#4f46c8]" value={accounts.length}>
+        <Kpi label="Total accounts" Icon={Building2} tone="bg-[var(--lilac)] text-[var(--link)]" value={accounts.length}>
           {updatedThisWeek ? (
             <span className={`${chip} text-[var(--foreground)]`}>
               <TrendingUp size={15} className="text-[var(--badge-green-fg)]" aria-hidden /> {updatedThisWeek} updated this week
@@ -259,7 +259,7 @@ export function AccountIntelligenceFeed({
                   aria-selected={active}
                   onClick={() => setFilterTab(t.key)}
                   className={`flex shrink-0 items-center gap-2.5 rounded-[14px] px-4 py-2.5 text-[15.5px] font-medium transition ${
-                    active ? "bg-[#0D1B2A] text-white shadow-[0_4px_12px_rgba(13,27,42,0.25)]" : "text-[var(--plum)] hover:bg-[var(--lilac)]"
+                    active ? "bg-[var(--brand)] text-[var(--on-brand)] shadow-[0_4px_12px_rgba(13,27,42,0.25)]" : "text-[var(--plum)] hover:bg-[var(--lilac)]"
                   }`}
                 >
                   {t.label}
@@ -283,7 +283,7 @@ export function AccountIntelligenceFeed({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Filter company, domain, country…"
-                className="w-full rounded-[14px] bg-[#f8f7fd] py-3 pl-11 pr-4 text-[15px] text-[var(--foreground)] outline-none placeholder:text-[var(--plum-muted)] focus:ring-2 focus:ring-[var(--brand-tint)]"
+                className="w-full rounded-[14px] bg-[var(--soft)] py-3 pl-11 pr-4 text-[15px] text-[var(--foreground)] outline-none placeholder:text-[var(--plum-muted)] focus:ring-2 focus:ring-[var(--brand-tint)]"
               />
             </label>
             {filters ? (
@@ -293,12 +293,12 @@ export function AccountIntelligenceFeed({
                 aria-expanded={showFilters}
                 onClick={() => setShowFilters((s) => !s)}
                 className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] transition ${
-                  showFilters ? "bg-[var(--brand-tint)] text-[var(--brand-active)]" : "bg-[#f8f7fd] text-[var(--plum)] hover:bg-[var(--lilac)]"
+                  showFilters ? "bg-[var(--brand-tint)] text-[var(--brand-active)]" : "bg-[var(--soft)] text-[var(--plum)] hover:bg-[var(--lilac)]"
                 }`}
               >
                 <SlidersHorizontal size={19} aria-hidden />
                 {filtersActive ? (
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[11px] font-bold text-white">
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[11px] font-bold text-[var(--on-brand)]">
                     {filtersActive}
                   </span>
                 ) : null}
@@ -504,7 +504,7 @@ export function AccountIntelligenceFeed({
               <span>{coverage}%</span>
             </div>
             <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-[var(--lilac)]">
-              <div className="h-full rounded-full bg-[#0D1B2A] transition-all duration-500" style={{ width: `${coverage}%` }} />
+              <div className="h-full rounded-full bg-[var(--brand)] transition-all duration-500" style={{ width: `${coverage}%` }} />
             </div>
           </Panel>
         </div>

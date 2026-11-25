@@ -169,6 +169,13 @@
       "when": 1794600000000,
       "tag": "0023_account_archive_and_shared_domains",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794700000000,
+      "tag": "0024_add_workspace_branding",
+      "breakpoints": true
     }
   ]
 }

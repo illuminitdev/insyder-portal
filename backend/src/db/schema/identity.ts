@@ -33,6 +33,8 @@ export const workspaces = pgTable(
     currency: text("currency").notNull().default("GBP"),
     /** Tenant-specific acceptance gates, e.g. {"requireBudgetKnown": false} */
     acceptanceGatesJson: text("acceptance_gates_json").notNull().default("{}"),
+    /** White label colours set by the tenant admin (JSON { primary, accent, sidebar }); null = Insyder colours */
+    brandingJson: text("branding_json"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     /** Set when a tenant admin deletes the workspace; its records stay for the audit trail */
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

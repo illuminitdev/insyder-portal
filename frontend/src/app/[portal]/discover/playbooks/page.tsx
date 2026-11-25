@@ -445,7 +445,7 @@ function PlaybookCard({
       <div className="mb-3 flex items-center justify-between gap-2">
         <span
           className={`rounded-[5px] px-2 py-0.5 text-[11px] font-semibold ${
-            active ? "bg-[var(--brand)] text-white" : "border border-[var(--line)] text-[var(--muted)]"
+            active ? "bg-[var(--brand)] text-[var(--on-brand)]" : "border border-[var(--line)] text-[var(--muted)]"
           }`}
         >
           {active ? "Active" : p.builtIn ? "Built-in" : "Custom"}

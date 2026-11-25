@@ -24,7 +24,7 @@ export function SubNav({ items }: { items: SubNavItem[] }) {
             prefetch={false}
             className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
               active
-                ? "bg-[var(--brand)] text-white shadow-2xs"
+                ? "bg-[var(--brand)] text-[var(--on-brand)] shadow-2xs"
                 : "text-slate-500 hover:bg-slate-100/80 hover:text-slate-800"
             }`}
           >

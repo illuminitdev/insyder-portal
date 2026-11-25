@@ -323,7 +323,7 @@ function AdminSection({ a, workspaceId }: { a: AdminReport; workspaceId: string 
                         setViewing({ userId: p.userId, name: p.name });
                       }}
                     >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--navy)] text-[11px] font-semibold text-white" aria-hidden>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--navy)] text-[11px] font-semibold text-[var(--on-brand)]" aria-hidden>
                         {initialsOf(p.name)}
                       </span>
                       <span className="min-w-0">

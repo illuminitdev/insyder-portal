@@ -77,7 +77,7 @@ export function OfferProductsCard({ workspaceId }: { workspaceId: string }) {
     <Card>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-tint)] text-[var(--brand)]">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-tint)] text-[var(--brand-text)]">
             <Package size={20} strokeWidth={1.75} aria-hidden />
           </span>
           <div>
@@ -140,7 +140,7 @@ export function OfferProductsCard({ workspaceId }: { workspaceId: string }) {
                 <p className="text-sm font-semibold">Product {i + 1}</p>
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--brand)]"
+                  className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--brand-text)]"
                   onClick={() => setItems((list) => list.filter((_, j) => j !== i))}
                 >
                   <Trash2 size={14} aria-hidden /> Remove

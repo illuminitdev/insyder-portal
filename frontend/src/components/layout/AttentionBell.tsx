@@ -280,7 +280,7 @@ export function BellMenu({
       >
         <Bell size={17} strokeWidth={1.75} aria-hidden />
         {total > 0 ? (
-          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white shadow-2xs">
+          <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--brand)] px-1 text-[10px] font-bold leading-none text-[var(--on-brand)] ring-2 ring-white shadow-2xs">
             {total > 99 ? "99+" : total}
           </span>
         ) : null}
@@ -345,7 +345,7 @@ export function BellMenu({
                       </span>
                       <span
                         className={`absolute right-4 top-3 rounded-full px-2 py-0.5 text-[11px] font-semibold group-hover/item:opacity-0 ${
-                          fresh ? "bg-[var(--brand)] text-white" : "bg-[var(--chip-bg)] text-[var(--muted)]"
+                          fresh ? "bg-[var(--brand)] text-[var(--on-brand)]" : "bg-[var(--chip-bg)] text-[var(--muted)]"
                         }`}
                       >
                         {fresh ? `${fresh} new` : count}

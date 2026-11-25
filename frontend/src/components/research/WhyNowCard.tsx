@@ -61,12 +61,12 @@ export function WhyNowCard({
       </div>
       {text ? (
         <>
-          <div className="mt-5 rounded-[16px] bg-[#f8f7fd] p-5">
+          <div className="mt-5 rounded-[16px] bg-[var(--soft)] p-5">
             <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-[var(--plum)]">Timing assessment</p>
             <p className="mt-2 text-[15.5px] leading-relaxed text-[var(--foreground)]">{text}</p>
           </div>
           {citations.length ? (
-            <div className="mt-4 rounded-[16px] bg-[#f8f7fd] p-5">
+            <div className="mt-4 rounded-[16px] bg-[var(--soft)] p-5">
               <p className="text-[12px] font-bold uppercase tracking-[0.1em] text-[var(--plum)]">Sources cited</p>
               <ul className="mt-2 space-y-1.5 text-[14px]">
                 {citations.map((c) => (
@@ -97,7 +97,7 @@ export function WhyNowCard({
           type="button"
           disabled={busy}
           onClick={() => void generate()}
-          className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-[14px] bg-gradient-to-r from-[var(--brand)] to-[var(--brand-active)] px-4 py-3 text-[15px] font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+          className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-[14px] bg-gradient-to-r from-[var(--brand)] to-[var(--brand-active)] px-4 py-3 text-[15px] font-semibold text-[var(--on-gradient)] transition hover:brightness-110 disabled:opacity-60"
         >
           <Lightbulb size={17} aria-hidden />
           {busy ? "Writing…" : text ? "Refresh summary" : "Summarise why now"}

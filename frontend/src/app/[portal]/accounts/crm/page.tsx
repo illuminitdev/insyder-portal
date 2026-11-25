@@ -169,7 +169,7 @@ function CrmGuide({ workspaceId }: { workspaceId: string }) {
                 ) : r.crm?.status === "failed" ? (
                   <span className="rounded bg-[var(--danger-tint)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--danger)]">Failed, try again</span>
                 ) : (
-                  <span className="rounded bg-[var(--brand)] px-1.5 py-0.5 text-[11px] font-semibold text-white">Not sent yet</span>
+                  <span className="rounded bg-[var(--brand)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--on-brand)]">Not sent yet</span>
                 ),
                 subtitle: r.owner ? `Owner: ${r.owner.name}` : "No owner",
                 meta: r.opportunity ? `${OPPORTUNITY_STAGE_LABELS[r.opportunity.stage]} · ${formatMoney(r.opportunity.valueAmount, r.opportunity.currency)}` : "No deal yet",

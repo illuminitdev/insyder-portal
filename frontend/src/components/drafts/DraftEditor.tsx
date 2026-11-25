@@ -229,7 +229,7 @@ export function DraftEditor({
                 void act(() => deleteDraft(draft.id, workspaceId), "Draft deleted.");
               }
             }}
-            className="text-[var(--brand-active)] hover:bg-[var(--brand-tint)] hover:text-[var(--brand)]"
+            className="text-[var(--brand-active)] hover:bg-[var(--brand-tint)] hover:text-[var(--brand-text)]"
             title="Delete this draft"
           >
             <Trash2 size={14} className="mr-1.5" />

@@ -73,7 +73,7 @@ function Eyebrow({ children }: { children: ReactNode }) {
 function IconTile({ Icon, tone }: { Icon: LucideIcon; tone: "red" | "blue" | "green" | "plum" }) {
   const cls = {
     red: "bg-[var(--brand-tint)] text-[var(--brand-active)]",
-    blue: "bg-[var(--lilac)] text-[#4f46c8]",
+    blue: "bg-[var(--lilac)] text-[var(--link)]",
     green: "bg-[var(--badge-green-bg)] text-[var(--badge-green-fg)]",
     plum: "bg-[var(--lilac)] text-[var(--plum)]",
   }[tone];
@@ -465,7 +465,7 @@ export function SignalsPanel({
                 ? rawBody
                 : null;
             return (
-              <li key={e.id} className="rounded-[18px] bg-[#f8f7fd] p-5 sm:p-6">
+              <li key={e.id} className="rounded-[18px] bg-[var(--soft)] p-5 sm:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row">
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-white text-[var(--brand-active)] shadow-[0_2px_8px_rgba(13,27,42,0.08)]">
                     <RadioTower size={21} aria-hidden />
@@ -514,7 +514,7 @@ export function SignalsPanel({
           })}
         </ul>
       ) : (
-        <p className="mt-6 rounded-[16px] bg-[#f8f7fd] px-5 py-6 text-[15px] text-[var(--plum)]">
+        <p className="mt-6 rounded-[16px] bg-[var(--soft)] px-5 py-6 text-[15px] text-[var(--plum)]">
           No signals yet. Run research to look for buying signals.
         </p>
       )}
@@ -597,7 +597,7 @@ export function DecisionMakersPanel({
         <>
           <ul className="mt-5 space-y-3">
             {shown.map((c) => (
-              <li key={c.id} className="flex flex-col gap-4 rounded-[18px] bg-[#f8f7fd] p-5 sm:flex-row sm:items-center">
+              <li key={c.id} className="flex flex-col gap-4 rounded-[18px] bg-[var(--soft)] p-5 sm:flex-row sm:items-center">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#e6e3f7] text-[17px] font-semibold text-[var(--foreground)]">
                   {initialsOf(c.name)}
                 </span>
@@ -724,7 +724,7 @@ export function DecisionMakersPanel({
                 <button
                   type="button"
                   onClick={onReviewEvidence}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--brand-tint)] px-3 py-1.5 text-xs font-semibold text-[var(--brand-active)] hover:bg-[var(--brand)] hover:text-white transition shadow-2xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--brand-tint)] px-3 py-1.5 text-xs font-semibold text-[var(--brand-active)] hover:bg-[var(--brand)] hover:text-[var(--on-brand)] transition shadow-2xs cursor-pointer"
                 >
                   <span>Go to evidence</span>
                   <ArrowRight size={13} />
@@ -734,7 +734,7 @@ export function DecisionMakersPanel({
           ) : null}
         </>
       ) : (
-        <p className="mt-5 rounded-[16px] bg-[#f8f7fd] px-5 py-6 text-[15px] text-[var(--plum)]">
+        <p className="mt-5 rounded-[16px] bg-[var(--soft)] px-5 py-6 text-[15px] text-[var(--plum)]">
           No sourced contacts yet. Add a person with a source, or a role to find if you only know the role.
         </p>
       )}
@@ -754,7 +754,7 @@ export function AccountFactsPanel({ brief }: { brief: Brief }) {
       {facts.length ? (
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {facts.map((f) => (
-            <div key={f.id} className="rounded-[16px] bg-[#f8f7fd] p-5">
+            <div key={f.id} className="rounded-[16px] bg-[var(--soft)] p-5">
               <Eyebrow>{humanize(f.fieldKey)}</Eyebrow>
               <p className="mt-2 text-[17px] font-semibold leading-snug">{f.value}</p>
               <p
@@ -772,7 +772,7 @@ export function AccountFactsPanel({ brief }: { brief: Brief }) {
           ))}
         </div>
       ) : (
-        <p className="mt-4 rounded-[16px] bg-[#f8f7fd] px-5 py-6 text-[15px] text-[var(--plum)]">
+        <p className="mt-4 rounded-[16px] bg-[var(--soft)] px-5 py-6 text-[15px] text-[var(--plum)]">
           No facts filled in yet. They are added in the qualification brief.
         </p>
       )}
@@ -930,7 +930,7 @@ export function buildTimeline(
 
 const DOT: Record<TimelineEvent["tone"], string> = {
   red: "bg-[var(--brand)]",
-  blue: "bg-[#4f46c8]",
+  blue: "bg-[var(--link)]",
   green: "bg-[#22a35a]",
   grey: "bg-[#d6d1e6]",
 };

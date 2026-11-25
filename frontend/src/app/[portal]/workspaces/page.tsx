@@ -40,7 +40,7 @@ function WorkspaceCard({
     <div className="group flex flex-col rounded-[12px] border border-[var(--line)] bg-white p-5 transition-shadow hover:shadow-[0_6px_20px_-8px_rgba(23,44,64,0.18)]">
       <Link href={href} prefetch className="flex flex-1 flex-col">
       <header className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--chip-bg)] text-[var(--navy)]" aria-hidden>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--chip-bg)] text-[var(--brand-text)]" aria-hidden>
           <Layers size={18} />
         </span>
         <div className="min-w-0 flex-1">

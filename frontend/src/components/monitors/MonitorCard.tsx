@@ -87,7 +87,7 @@ export function MonitorCard({
           <div className="mt-2 flex flex-wrap gap-1.5 text-[12.5px]">
             {recipe.accountNames.length > 0 ? (
               <span
-                className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 font-semibold text-[var(--brand)] border border-brand-200"
+                className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 font-semibold text-[var(--brand-text)] border border-brand-200"
                 title={recipe.accountNames.join(", ")}
               >
                 <Building2 size={13} aria-hidden />
@@ -164,7 +164,7 @@ export function MonitorCard({
             onClick={onCheck}
             disabled={checking}
             title="Runs live research now and uses up to 5 research units"
-            className="inline-flex items-center gap-2 rounded-[12px] bg-gradient-to-r from-[var(--brand-active)] to-[var(--brand)] px-4 py-2.5 text-[14px] font-semibold text-white shadow-[0_6px_16px_rgba(13,27,42,0.25)] transition hover:brightness-110 disabled:cursor-wait disabled:opacity-70"
+            className="inline-flex items-center gap-2 rounded-[12px] bg-gradient-to-r from-[var(--brand-active)] to-[var(--brand)] px-4 py-2.5 text-[14px] font-semibold text-[var(--on-gradient)] shadow-[0_6px_16px_rgba(13,27,42,0.25)] transition hover:brightness-110 disabled:cursor-wait disabled:opacity-70"
           >
             <RefreshCw size={16} className={checking ? "animate-spin" : ""} aria-hidden />
             {checking ? "Checking…" : "Check now"}
@@ -179,7 +179,7 @@ export function MonitorCard({
                   setConfirmRemove(false);
                   onRemove();
                 }}
-                className="rounded-[9px] bg-[var(--brand-active)] px-3 py-1.5 font-semibold text-white hover:brightness-110"
+                className="rounded-[9px] bg-[var(--brand-active)] px-3 py-1.5 font-semibold text-[var(--on-accent)] hover:brightness-110"
               >
                 Remove
               </button>

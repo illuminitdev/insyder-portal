@@ -73,7 +73,7 @@ export function DashboardHeader({ subtitle, actions }: { subtitle: string; actio
   return (
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-brand-50/90 border border-brand-100/90 px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--brand)] shadow-2xs">
+        <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-brand-50/90 border border-brand-100/90 px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider text-[var(--brand-text)] shadow-2xs">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand)]" />
           <span>Overview · {ROLE_LABELS[role ?? ""] ?? "Member"}</span>
         </div>
@@ -127,7 +127,7 @@ export function StatTile({
           <span
             className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold truncate ${
               tone === "red"
-                ? "bg-brand-50 text-[var(--brand)] border border-brand-100/60"
+                ? "bg-brand-50 text-[var(--brand-text)] border border-brand-100/60"
                 : "bg-slate-50 text-slate-500 border border-slate-100/60"
             }`}
           >
@@ -180,7 +180,7 @@ export function Panel({
           {subtitle ? <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p> : null}
         </div>
         {href ? (
-          <Link href={href} className="shrink-0 text-xs font-bold text-[var(--brand)] hover:underline flex items-center gap-1">
+          <Link href={href} className="shrink-0 text-xs font-bold text-[var(--brand-text)] hover:underline flex items-center gap-1">
             {linkLabel} →
           </Link>
         ) : null}
@@ -352,7 +352,7 @@ export function Avatar({ name }: { name: string }) {
     .join("")
     .toUpperCase();
   return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--navy)] text-[11.5px] font-semibold text-white">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--navy)] text-[11.5px] font-semibold text-[var(--on-brand)]">
       {initials || "?"}
     </span>
   );

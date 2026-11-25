@@ -36,6 +36,30 @@
   --sidebar-line: #e8e3d7;
   --card-line: #e8e3d7;
   --card-shadow: 0 10px 30px rgba(13, 27, 42, 0.06);
+  --brand-200: #bfddd7;
+  --brand-700: #08504b;
+  /* Left menu (a workspace's white label can change these) */
+  --sidebar-bg: #132538;
+  --sidebar-active: #223d50;
+  --sidebar-active-text: #ffffff;
+  --sidebar-active-icon: #7fd3cb;
+  /* Links and icons in briefs and panels, soft tile backgrounds, avatar gradient (white label too) */
+  --link: #4f46c8;
+  --link-200: #c9c4f0;
+  --soft: #f8f7fd;
+  --avatar-to: #14857f;
+  /* Text on the brand colours: white by default, dark when a workspace picks a light colour */
+  --brand-text: #0d1b2a;
+  --on-brand: #ffffff;
+  --on-accent: #ffffff;
+  --on-gradient: #ffffff;
+  --sidebar-text: #c3ced9;
+  --sidebar-muted: #8fa2b5;
+  --sidebar-strong: #ffffff;
+  --sidebar-accent: #7fd3cb;
+  --sidebar-hover: rgba(255, 255, 255, 0.08);
+  --sidebar-card: rgba(255, 255, 255, 0.06);
+  --sidebar-border: rgba(255, 255, 255, 0.1);
 }
 
 /* The signed-in app is drawn at 90%, so 100% browser zoom looks like 90% did.
@@ -64,7 +88,7 @@
 }
 .app-sidebar {
   /* Dark navy side panel (Insyder site colour) */
-  background: #132538;
+  background: var(--sidebar-bg);
 }
 
 @theme inline {
@@ -78,11 +102,12 @@
   --color-brand-tint: var(--brand-tint);
   --color-accent: var(--accent);
   --color-danger: var(--danger);
-  --color-brand-50: #eef7f5;
-  --color-brand-100: #e6f2ef;
-  --color-brand-200: #bfddd7;
-  --color-brand-600: #0e6b67;
-  --color-brand-700: #08504b;
+  /* Variables, so a workspace's white label colours (AppShell) recolour these utilities too */
+  --color-brand-50: var(--lilac);
+  --color-brand-100: var(--brand-tint);
+  --color-brand-200: var(--brand-200);
+  --color-brand-600: var(--brand-active);
+  --color-brand-700: var(--brand-700);
   --color-navy: var(--navy);
   --font-sans: var(--font-geist), "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-heading: var(--font-schibsted), "Schibsted Grotesk", var(--font-geist), sans-serif;
@@ -348,7 +373,7 @@ h3 {
   height: 34px;
   border-radius: 9px;
   background: var(--brand);
-  color: #ffffff;
+  color: var(--on-brand);
   font-family: var(--font-sans);
   font-size: 17px;
   font-weight: 800;
@@ -599,7 +624,7 @@ h3 {
   border: 0;
   border-radius: 8px;
   background: var(--brand);
-  color: #ffffff;
+  color: var(--on-brand);
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
@@ -774,7 +799,7 @@ h3 {
 .insyder-tour .driver-popover-footer .driver-popover-next-btn {
   background: var(--brand);
   border-color: var(--brand);
-  color: #fff;
+  color: var(--on-brand);
 }
 .insyder-tour .driver-popover-footer .driver-popover-next-btn:hover {
   background: var(--brand-hover);

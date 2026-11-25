@@ -648,7 +648,7 @@ function FindAndAssign({ workspaceId }: { workspaceId: string }) {
             <div role="group" aria-labelledby="countries-label" className="text-xs font-semibold text-[var(--muted)]">
               <span id="countries-label" className="block">
                 Countries
-                <span aria-hidden="true" className="ml-0.5 text-[var(--brand)]">
+                <span aria-hidden="true" className="ml-0.5 text-[var(--brand-text)]">
                   *
                 </span>
               </span>
@@ -706,7 +706,7 @@ function FindAndAssign({ workspaceId }: { workspaceId: string }) {
             <SlidersHorizontal size={15} aria-hidden />
             More filters
             {moreFiltersSet ? (
-              <span className="rounded-full bg-[var(--brand)] px-1.5 text-[11px] font-semibold leading-[18px] text-white">
+              <span className="rounded-full bg-[var(--brand)] px-1.5 text-[11px] font-semibold leading-[18px] text-[var(--on-brand)]">
                 {moreFiltersSet}
               </span>
             ) : null}

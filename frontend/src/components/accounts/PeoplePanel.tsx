@@ -403,9 +403,9 @@ export function PeoplePanel({
       {!form && formError ? <div className="mt-3"><FormError message={formError} /></div> : null}
 
       {askBrief ? (
-        <div role="dialog" aria-label="Run role hypothesis" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[var(--card-line)] bg-[#f8f7fd] p-4 text-sm">
+        <div role="dialog" aria-label="Run role hypothesis" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-[var(--card-line)] bg-[var(--soft)] p-4 text-sm">
           <div className="flex min-w-0 items-start gap-2.5">
-            <FileText size={18} className="mt-0.5 shrink-0 text-[#4f46c8]" aria-hidden />
+            <FileText size={18} className="mt-0.5 shrink-0 text-[var(--link)]" aria-hidden />
             <div>
               <p className="font-semibold">Run a role hypothesis for {askBrief.name}?</p>
               <p className="mt-0.5 text-xs text-[var(--muted)]">
@@ -455,7 +455,7 @@ export function PeoplePanel({
                 const ev = c.evidenceId ? evidenceById.get(c.evidenceId) : undefined;
                 return (
                   <li key={c.id} className="flex items-start gap-3 rounded-[16px] border border-[var(--card-line)] bg-white p-4 text-sm shadow-[var(--card-shadow)]">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--lilac)] text-[13px] font-semibold text-[#4f46c8]" aria-hidden>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--lilac)] text-[13px] font-semibold text-[var(--link)]" aria-hidden>
                       {c.name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("")}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -486,7 +486,7 @@ export function PeoplePanel({
                               <>
                                 <a
                                   href={`mailto:${c.email}`}
-                                  className="text-[var(--foreground)] underline-offset-2 hover:text-[var(--brand)] hover:underline"
+                                  className="text-[var(--foreground)] underline-offset-2 hover:text-[var(--brand-text)] hover:underline"
                                   title="Open in your mail app"
                                 >
                                   {c.email}
@@ -495,7 +495,7 @@ export function PeoplePanel({
                                   href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(c.email)}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="ml-2 inline-flex items-center gap-0.5 text-xs text-[var(--muted)] hover:text-[var(--brand)] hover:underline"
+                                  className="ml-2 inline-flex items-center gap-0.5 text-xs text-[var(--muted)] hover:text-[var(--brand-text)] hover:underline"
                                   title="Write in Gmail"
                                 >
                                   Gmail <ExternalLink size={11} aria-hidden />
@@ -504,7 +504,7 @@ export function PeoplePanel({
                             ) : null}
                             {c.email && c.phone ? " · " : null}
                             {c.phone ? (
-                              <a href={`tel:${c.phone.replace(/[^\d+]/g, "")}`} className="hover:text-[var(--brand)] hover:underline">
+                              <a href={`tel:${c.phone.replace(/[^\d+]/g, "")}`} className="hover:text-[var(--brand-text)] hover:underline">
                                 {c.phone}
                               </a>
                             ) : null}
@@ -518,7 +518,7 @@ export function PeoplePanel({
                             href={ev.sourceUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-md bg-[var(--brand-tint)] px-1.5 py-0.5 text-[11.5px] font-semibold text-[var(--brand-active)] hover:bg-[var(--brand)] hover:text-white transition shadow-2xs"
+                            className="inline-flex items-center gap-1 rounded-md bg-[var(--brand-tint)] px-1.5 py-0.5 text-[11.5px] font-semibold text-[var(--brand-active)] hover:bg-[var(--brand)] hover:text-[var(--on-brand)] transition shadow-2xs"
                             title={`Open evidence source: ${ev.sourceUrl}`}
                           >
                             <span>{evidenceLabel(ev)}</span>
@@ -558,9 +558,9 @@ export function PeoplePanel({
           )}
         </section>
 
-        <section className="rounded-[16px] border border-[var(--card-line)] bg-[#f8f7fd] p-4">
+        <section className="rounded-[16px] border border-[var(--card-line)] bg-[var(--soft)] p-4">
           <h3 className="flex items-center gap-2 text-[14px]">
-            <Lightbulb size={15} className="text-[#4f46c8]" aria-hidden />
+            <Lightbulb size={15} className="text-[var(--link)]" aria-hidden />
             Roles to find <span className="font-normal text-[var(--muted)]">({hypotheses.length})</span>
           </h3>
           {hypotheses.length ? (
@@ -661,8 +661,8 @@ function StakeholderBriefLink({
     const failed = status === "failed";
     const href = `/accounts/stakeholder?accountId=${accountId}&contactId=${contact.id}`;
     return (
-      <div className="mt-2.5 rounded-[10px] border border-dashed border-[#c9c4f0] bg-[#f8f7fd] px-3 py-2.5 text-xs">
-        <p className="flex items-center gap-1.5 font-semibold text-[#4f46c8]">
+      <div className="mt-2.5 rounded-[10px] border border-dashed border-[var(--link-200)] bg-[var(--soft)] px-3 py-2.5 text-xs">
+        <p className="flex items-center gap-1.5 font-semibold text-[var(--link)]">
           <FileText size={13} aria-hidden />
           {failed ? "The last role hypothesis failed. Run it again?" : "No role hypothesis yet. Run one for this contact?"}
         </p>
@@ -686,7 +686,7 @@ function StakeholderBriefLink({
           >
             {busy ? "Starting…" : "Run role hypothesis"}
           </Button>
-          <PortalLink href={href} className="font-semibold text-[#4f46c8] hover:underline">
+          <PortalLink href={href} className="font-semibold text-[var(--link)] hover:underline">
             Add a meeting note first
           </PortalLink>
         </div>
@@ -697,7 +697,7 @@ function StakeholderBriefLink({
   return (
     <PortalLink
       href={`/accounts/stakeholder?accountId=${accountId}&contactId=${contact.id}`}
-      className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-[var(--card-line)] bg-[#f8f7fd] px-2.5 py-1 text-xs font-semibold text-[#4f46c8] hover:border-[#4f46c8]"
+      className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-[var(--card-line)] bg-[var(--soft)] px-2.5 py-1 text-xs font-semibold text-[var(--link)] hover:border-[var(--link)]"
       title="Role hypothesis: who they are, how they likely evaluate ideas, what to lead with and what to ask"
     >
       {writing ? <Loader2 size={13} className="animate-spin" aria-hidden /> : <FileText size={13} aria-hidden />}

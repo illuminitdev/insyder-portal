@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes } from "react";
 
 const variants = {
   primary:
-    "bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] border-transparent font-semibold active:scale-[0.99]",
+    "bg-[var(--brand)] text-[var(--on-gradient)] hover:bg-[var(--brand-hover)] border-transparent font-semibold active:scale-[0.99]",
   secondary:
     "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 font-medium shadow-2xs active:scale-[0.99]",
   ghost:

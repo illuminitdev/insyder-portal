@@ -75,7 +75,7 @@ export function CountryPicker({
             <button
               type="button"
               aria-label={`Remove ${countryName(code)}`}
-              className="rounded-full p-0.5 hover:bg-[var(--brand)] hover:text-white"
+              className="rounded-full p-0.5 hover:bg-[var(--brand)] hover:text-[var(--on-brand)]"
               onClick={(e) => {
                 e.stopPropagation();
                 onChange(value.filter((c) => c !== code));

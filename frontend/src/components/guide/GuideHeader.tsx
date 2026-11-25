@@ -23,7 +23,7 @@ export function GuideHeader({
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--brand)]">{eyebrow}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--brand-text)]">{eyebrow}</p>
         <p className="mt-1 text-sm text-[var(--muted)]">{title}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-sm">

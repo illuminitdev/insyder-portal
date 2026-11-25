@@ -41,7 +41,7 @@ export default function ProfilePage() {
     <div className="max-w-xl space-y-6">
       <Card>
         <div className="flex items-center gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--navy)] text-lg font-semibold text-white">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[var(--navy)] text-lg font-semibold text-[var(--on-brand)]">
             {initials}
           </span>
           <div className="min-w-0">

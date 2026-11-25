@@ -106,7 +106,7 @@ export function MemberActivityDialog({
       onClose={onClose}
       size="lg"
       icon={
-        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--navy)] text-sm font-semibold text-white" aria-hidden>
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--navy)] text-sm font-semibold text-[var(--on-brand)]" aria-hidden>
           {initialsOf(name)}
         </span>
       }
@@ -129,7 +129,7 @@ export function MemberActivityDialog({
       {data ? (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-            <Count label="Open tasks" value={data.summary.openTasks} Icon={ClipboardList} tone="bg-[var(--chip-bg)] text-[var(--navy)]" />
+            <Count label="Open tasks" value={data.summary.openTasks} Icon={ClipboardList} tone="bg-[var(--chip-bg)] text-[var(--brand-text)]" />
             <Count label="Overdue" value={data.summary.overdueTasks} Icon={AlarmClock} tone="bg-[var(--danger-tint)] text-[var(--danger)]" />
             <Count label="In progress" value={data.summary.inProgressTasks} Icon={Loader} tone="bg-[var(--badge-blue-bg)] text-[var(--badge-blue-fg)]" />
             <Count label="Research running" value={data.summary.researchRunning} Icon={Search} tone="bg-[var(--badge-amber-bg)] text-[var(--badge-amber-fg)]" />

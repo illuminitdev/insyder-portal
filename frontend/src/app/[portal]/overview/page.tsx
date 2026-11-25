@@ -167,7 +167,7 @@ function Guide({ workspaceId, onDismiss }: { workspaceId: string; onDismiss: () 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-[var(--brand)]" />
+              <Target className="h-5 w-5 text-[var(--brand-text)]" />
               <h3 className="text-base font-semibold text-[var(--foreground)]">{config.cardTitle}</h3>
             </div>
             <p className="text-sm text-[var(--muted)]">{config.cardDesc}</p>

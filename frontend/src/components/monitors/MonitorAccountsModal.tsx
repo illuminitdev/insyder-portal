@@ -152,7 +152,7 @@ export function MonitorAccountsModal({
                   className="flex items-center justify-between gap-2 rounded-lg border border-[var(--line)] bg-white px-3 py-2 shadow-2xs"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-[11px] font-bold text-[var(--brand)]">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-[11px] font-bold text-[var(--brand-text)]">
                       {acc.name.slice(0, 2).toUpperCase()}
                     </span>
                     <div className="min-w-0">
@@ -232,7 +232,7 @@ export function MonitorAccountsModal({
                       ]);
                       setSearchQuery("");
                     }}
-                    className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs hover:bg-brand-50 hover:text-[var(--brand)] transition"
+                    className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs hover:bg-brand-50 hover:text-[var(--brand-text)] transition"
                   >
                     <span className="font-semibold truncate">{a.name}</span>
                     {a.domain ? <span className="text-[11px] text-slate-400 truncate">{a.domain}</span> : null}
@@ -247,7 +247,7 @@ export function MonitorAccountsModal({
             <button
               type="button"
               onClick={() => setShowAddAccount(true)}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand)] hover:underline pt-0.5"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand-text)] hover:underline pt-0.5"
             >
               + Add another account to this monitor
             </button>

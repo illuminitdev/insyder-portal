@@ -91,7 +91,7 @@ function DraftsView({ workspaceId }: { workspaceId: string }) {
           onClick={() => go({ channel: "email" })}
           className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition inline-flex items-center gap-1.5 ${
             channelFilter === "email"
-              ? "bg-[var(--brand)] text-white shadow-2xs"
+              ? "bg-[var(--brand)] text-[var(--on-brand)] shadow-2xs"
               : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
           }`}
         >
