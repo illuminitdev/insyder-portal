@@ -55,6 +55,10 @@ export const accounts = pgTable(
     /** JSON array of { url, title, publishedDate } the summary cites */
     whyNowCitationsJson: text("why_now_citations_json"),
     whyNowAt: timestamp("why_now_at", { withTimezone: true }),
+    /** 1-sentence summary of what the company is/does */
+    companySummary: text("company_summary"),
+    /** Playbook template key this account belongs to */
+    playbookTemplateKey: text("playbook_template_key"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -62,6 +66,7 @@ export const accounts = pgTable(
     index("accounts_workspace_idx").on(t.workspaceId),
     index("accounts_tenant_idx").on(t.tenantId),
     index("accounts_domain_idx").on(t.workspaceId, t.domain),
+    index("accounts_playbook_idx").on(t.workspaceId, t.playbookTemplateKey),
   ],
 );
 

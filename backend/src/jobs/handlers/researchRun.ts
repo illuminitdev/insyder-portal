@@ -7,6 +7,7 @@ import {
   evidence,
   mergeCandidates,
   offers,
+  playbookVersions,
   providerUsage,
   researchRuns,
 } from "../../db/schema/index.js";
@@ -217,16 +218,25 @@ export async function handleResearchRun(
         items: fetched.items,
       });
       const [acct] = await db.select().from(accounts).where(eq(accounts.id, run.accountId)).limit(1);
-      await db
-        .update(accounts)
-        .set({
-          researchState: "researched",
-          // Missing evidence cannot inflate (or erase) a score
-          fitScore:
-            result.fitScore == null ? (acct?.fitScore ?? null) : Math.max(acct?.fitScore ?? 0, result.fitScore),
-          updatedAt: new Date(),
-        })
-        .where(eq(accounts.id, run.accountId));
+      const accountUpdates: Partial<typeof accounts.$inferInsert> = {
+        researchState: "researched",
+        // Missing evidence cannot inflate (or erase) a score
+        fitScore:
+          result.fitScore == null ? (acct?.fitScore ?? null) : Math.max(acct?.fitScore ?? 0, result.fitScore),
+        updatedAt: new Date(),
+      };
+      // The account joins the playbook it was researched with, unless it already has one
+      if (!acct?.playbookTemplateKey) {
+        const runPlaybookKey = await playbookKeyOfRun(run);
+        if (runPlaybookKey) accountUpdates.playbookTemplateKey = runPlaybookKey;
+      }
+      // "Company overview": one sentence on what the company does, written once (a summary someone
+      // typed in or imported is kept)
+      if (acct && !acct.companySummary) {
+        const overview = await companyOverview(acct.name, acct.domain);
+        if (overview) accountUpdates.companySummary = overview;
+      }
+      await db.update(accounts).set(accountUpdates).where(eq(accounts.id, run.accountId));
       summary = {
         evidenceCreated: result.created,
         duplicatesSkipped: result.duplicates,
@@ -311,6 +321,8 @@ export type DiscoveryRow = {
   name: string;
   domain: string | null;
   country: string | null;
+  /** One sentence on what the company does (company overview) */
+  companySummary?: string | null;
   isNew: boolean;
   /** Company identity could not be confirmed (no website, or name-only match) */
   identityNeedsReview: boolean;
@@ -339,16 +351,31 @@ async function accountsFromSignals(
       name: accounts.name,
       domain: accounts.domain,
       country: accounts.country,
+      companySummary: accounts.companySummary,
       archivedAt: accounts.archivedAt,
       deletedAt: accounts.deletedAt,
     })
     .from(accounts)
     .where(and(eq(accounts.workspaceId, run.workspaceId), eq(accounts.tenantId, run.tenantId), isNull(accounts.mergedIntoId)));
-  type Known = { id: string; name: string; domain: string | null; country: string | null; dismissed?: boolean };
+  type Known = {
+    id: string;
+    name: string;
+    domain: string | null;
+    country: string | null;
+    companySummary?: string | null;
+    dismissed?: boolean;
+  };
   // Archived and deleted accounts are still matched, so a company the team dismissed is not added
   // again; live accounts come last so they win when a live and a dismissed record share a key.
   const known: Known[] = existing
-    .map((a) => ({ id: a.id, name: a.name, domain: a.domain, country: a.country, dismissed: Boolean(a.archivedAt || a.deletedAt) }))
+    .map((a) => ({
+      id: a.id,
+      name: a.name,
+      domain: a.domain,
+      country: a.country,
+      companySummary: a.companySummary,
+      dismissed: Boolean(a.archivedAt || a.deletedAt),
+    }))
     .sort((a, b) => Number(b.dismissed) - Number(a.dismissed));
   const byDomain = new Map<string, Known>(known.filter((a) => a.domain).map((a) => [a.domain!, a]));
   const byName = new Map<string, Known>(known.map((a) => [companyNameKey(a.name), a]));
@@ -358,6 +385,8 @@ async function accountsFromSignals(
   let unmatched = 0;
   let skippedSuppressed = 0;
   let skippedDismissed = 0;
+  // New accounts join the playbook the run was made with
+  const runPlaybookKey = await playbookKeyOfRun(run);
 
   for (const item of items) {
     const name = item.subject?.companyName?.trim() || null;
@@ -398,6 +427,7 @@ async function accountsFromSignals(
         name: accountName,
         domain,
         country: item.country ?? null,
+        playbookTemplateKey: runPlaybookKey,
         source: mode === "similar" ? "lookalike" : mode === "webset" ? "list" : "discovery",
         researchState: "researching",
         acceptanceState: "draft",
@@ -438,7 +468,11 @@ async function accountsFromSignals(
     groups.set(target.id, g);
   }
 
-  const peopleByAccount = await findLeadContacts([...groups.values()]);
+  const [peopleByAccount, overviewByAccount] = await Promise.all([
+    findLeadContacts([...groups.values()]),
+    // Company overviews only for leads that don't have one yet
+    fetchCompanyOverviews([...groups.values()].filter((g) => !g.companySummary)),
+  ]);
   // People search results first; a list's enrichment contact (email/phone) is kept alongside.
   // Then emails/phones written on each company's own website fill in what's still missing.
   const contactsByAccount = await addSiteContactDetails(
@@ -462,9 +496,10 @@ async function accountsFromSignals(
     const [acct] = await db.select().from(accounts).where(eq(accounts.id, g.id)).limit(1);
     const fitScore =
       result.fitScore == null ? (acct?.fitScore ?? null) : Math.max(acct?.fitScore ?? 0, result.fitScore);
+    const overview = overviewByAccount.get(g.id);
     await db
       .update(accounts)
-      .set({ researchState: "researched", fitScore, updatedAt: new Date() })
+      .set({ researchState: "researched", fitScore, updatedAt: new Date(), ...(overview ? { companySummary: overview } : {}) })
       .where(eq(accounts.id, g.id));
     const latest = [...g.items].sort((a, b) => (b.eventDate ?? "").localeCompare(a.eventDate ?? ""))[0]!;
     const contacts = contactsByAccount.get(g.id) ?? [];
@@ -474,6 +509,7 @@ async function accountsFromSignals(
       name: g.name,
       domain: g.domain,
       country: g.country,
+      companySummary: overview ?? g.companySummary ?? null,
       isNew: g.isNew,
       identityNeedsReview: g.review,
       trigger: {
@@ -496,6 +532,55 @@ async function accountsFromSignals(
     skippedDismissed,
     noResults: items.length === 0,
   };
+}
+
+/** Template key of the playbook a run was made with (null when none) */
+async function playbookKeyOfRun(run: typeof researchRuns.$inferSelect): Promise<string | null> {
+  if (!run.playbookVersionId) return null;
+  const [pb] = await getDb()
+    .select({ templateKey: playbookVersions.templateKey })
+    .from(playbookVersions)
+    .where(eq(playbookVersions.id, run.playbookVersionId))
+    .limit(1);
+  return pb?.templateKey ?? null;
+}
+
+/**
+ * "Company overview": one sentence on what the company does, from Exa Answer. Null when the
+ * provider can't answer or the answer doesn't look like one plain sentence. Never built from an
+ * event summary, which describes a signal rather than the company.
+ */
+async function companyOverview(name: string, domain: string | null): Promise<string | null> {
+  const provider = getResearchProvider();
+  if (!provider.answer || !name || /unknown|unnamed/i.test(name)) return null;
+  try {
+    const q = `In one sentence, what does the company "${name}"${domain ? ` (${domain})` : ""} do or provide?`;
+    const answered = await provider.answer(q);
+    const cleaned = answered.answer
+      ?.replace(/\[\d+\]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    return cleaned && cleaned.length > 20 && cleaned.length < 450 ? cleaned : null;
+  } catch {
+    // Non-fatal: the account simply has no overview yet
+    return null;
+  }
+}
+
+const OVERVIEW_PARALLEL = 5;
+
+/** Company overviews for discovered leads, a few at a time */
+async function fetchCompanyOverviews(groups: Array<{ id: string; name: string; domain: string | null }>) {
+  const map = new Map<string, string>();
+  for (let i = 0; i < groups.length; i += OVERVIEW_PARALLEL) {
+    await Promise.all(
+      groups.slice(i, i + OVERVIEW_PARALLEL).map(async (g) => {
+        const overview = await companyOverview(g.name, g.domain);
+        if (overview) map.set(g.id, overview);
+      }),
+    );
+  }
+  return map;
 }
 
 const PEOPLE_SEARCH_LIMIT = 25;

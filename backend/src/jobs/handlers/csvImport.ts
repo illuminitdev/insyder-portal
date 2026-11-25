@@ -11,7 +11,7 @@ import { newId } from "../../utils/ids.js";
 import { companyNameKey, normalizeCountry, normalizeDomain } from "../../utils/normalize.js";
 import { activeSuppressionSet, normalizeSuppressionValue } from "../../services/suppressions.js";
 
-export const IMPORT_FIELDS = ["name", "domain", "country", "legal_name"] as const;
+export const IMPORT_FIELDS = ["name", "domain", "country", "legal_name", "company_summary", "playbook"] as const;
 export type ImportField = (typeof IMPORT_FIELDS)[number];
 export type ColumnMapping = Partial<Record<ImportField, string>>;
 
@@ -21,6 +21,16 @@ const ALIASES: Record<ImportField, string[]> = {
   domain: ["domain", "website", "url", "web", "company domain"],
   country: ["country", "country code", "location country"],
   legal_name: ["legal_name", "legal name", "legalname", "registered name"],
+  company_summary: [
+    "company_summary",
+    "company summary",
+    "summary",
+    "description",
+    "overview",
+    "about",
+    "what they do",
+  ],
+  playbook: ["playbook", "playbook_template_key", "playbook template", "campaign"],
 };
 
 export function resolveMapping(headers: string[], mapping?: ColumnMapping): Record<ImportField, string | null> {
@@ -107,6 +117,8 @@ export async function handleCsvImport(payload: {
       rowErrors.push(`${where}: unknown country "${rawCountry.slice(0, 40)}" (imported without country)`);
     }
     const legalName = (cols.legal_name ? row[cols.legal_name] : "") || null;
+    const companySummary = (cols.company_summary ? row[cols.company_summary]?.trim() : "") || null;
+    const playbookTemplateKey = (cols.playbook ? row[cols.playbook]?.trim() : "") || null;
 
     try {
       if (domain && suppressed.has(normalizeSuppressionValue(domain))) {
@@ -134,6 +146,8 @@ export async function handleCsvImport(payload: {
         domain,
         country,
         legalName,
+        companySummary: companySummary ? companySummary.slice(0, 1000) : null,
+        playbookTemplateKey: playbookTemplateKey ? playbookTemplateKey.slice(0, 100) : null,
         source: "import",
         researchState: "unresearched",
         acceptanceState: "draft",

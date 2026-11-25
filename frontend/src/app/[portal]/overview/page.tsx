@@ -189,7 +189,7 @@ function Overview({ workspaceId }: { workspaceId: string }) {
   const [guideDismissed, setGuideDismissed] = usePersistentState<boolean>("overview:guideDismissed", false);
   const Dashboard = DASHBOARDS[role ?? ""] ?? AnalystDashboard;
   return (
-    <div className="mx-auto max-w-[1240px]">
+    <div className="w-full min-w-0">
       {guideDismissed ? (
         <>
           <Dashboard workspaceId={workspaceId} />
