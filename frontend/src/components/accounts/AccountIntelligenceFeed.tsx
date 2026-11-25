@@ -4,7 +4,14 @@ import { useState, type ReactNode } from "react";
 import {
   ArrowRight,
   Banknote,
+  BookOpenCheck,
   Building2,
+  ChevronDown,
+  ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Layers,
+  LayoutList,
   Radio,
   RadioTower,
   RefreshCw,
@@ -18,6 +25,7 @@ import {
 import { PortalLink as Link } from "@/components/layout/PortalLink";
 import type { Account, PipelineRow } from "@/lib/api/accounts";
 import type { ChangeEvent } from "@/lib/api/monitors";
+import type { PlaybookView } from "@/lib/api/playbooks";
 import { formatMoney, OPPORTUNITY_STAGE_LABELS } from "@/lib/api/opportunities";
 import { humanize } from "@/components/ui/Field";
 import { usePagination } from "@/components/ui/Pagination";
@@ -115,11 +123,101 @@ function ScoreBadge({ score }: { score: number | null }) {
 
 const chip = "inline-flex items-center gap-1.5 rounded-lg bg-[var(--lilac)] px-2 py-0.5 text-[13px] font-semibold";
 
+/** One playbook's accounts, collapsible, 10 cards per page */
+function PlaybookGroupSection({
+  groupKey,
+  groupAccounts,
+  isExpanded,
+  onToggle,
+  playbook,
+  selection,
+  onToggleSelection,
+  renderCard,
+}: {
+  groupKey: string;
+  groupAccounts: Account[];
+  isExpanded: boolean;
+  onToggle: () => void;
+  playbook?: PlaybookView;
+  selection?: { selected: string[]; onChange: (ids: string[]) => void };
+  onToggleSelection: () => void;
+  renderCard: (acc: Account, opts?: { hidePlaybookBadge?: boolean }) => ReactNode;
+}) {
+  const { pageItems, pager } = usePagination(groupAccounts, 10);
+  const title = playbook
+    ? playbook.name
+    : groupKey === "unassigned"
+      ? "General / Unassigned"
+      : humanize(groupKey.replace(/^custom_/, ""));
+  const desc = playbook?.rules?.description;
+  const tier1Count = groupAccounts.filter(isTier1).length;
+  const eligible = groupAccounts.filter(canQueueResearch).map((a) => a.id);
+  const allSelected = eligible.length > 0 && eligible.every((id) => selection?.selected.includes(id));
+
+  return (
+    <div className="rounded-[20px] border border-[var(--card-line)] bg-white/60 p-4 shadow-[var(--card-shadow)] sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={isExpanded}
+          className="flex items-center gap-2.5 text-left transition hover:opacity-80"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--brand-tint)] text-[var(--brand-active)]">
+            {isExpanded ? <ChevronDown size={17} aria-hidden /> : <ChevronRight size={17} aria-hidden />}
+          </span>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-[18px] font-bold tracking-[-0.02em] text-[var(--foreground)]">{title}</h3>
+              <span className="rounded-full bg-[var(--lilac)] px-2.5 py-0.5 text-[12px] font-semibold text-[var(--foreground)]">
+                {groupAccounts.length} {groupAccounts.length === 1 ? "account" : "accounts"}
+              </span>
+              {tier1Count ? (
+                <span className="rounded-full bg-[var(--brand-tint)] px-2 py-0.5 text-[11.5px] font-bold text-[var(--brand-active)]">
+                  {tier1Count} Tier 1
+                </span>
+              ) : null}
+            </div>
+            {desc ? <p className="mt-0.5 text-[13.5px] text-[var(--plum)]">{desc}</p> : null}
+            {groupKey === "unassigned" && !desc ? (
+              <p className="mt-0.5 text-[13px] italic text-[var(--plum-muted)]">
+                These accounts aren&apos;t linked to a playbook yet. Research them to assign one.
+              </p>
+            ) : null}
+          </div>
+        </button>
+
+        {selection && eligible.length ? (
+          <button
+            type="button"
+            onClick={onToggleSelection}
+            className={`inline-flex items-center gap-1.5 rounded-[10px] px-3 py-1.5 text-[12.5px] font-medium transition ${
+              allSelected
+                ? "bg-[var(--brand-tint)] font-semibold text-[var(--brand-active)]"
+                : "bg-[var(--soft)] text-[var(--plum)] hover:bg-[var(--lilac)]"
+            }`}
+          >
+            {allSelected ? "Unselect playbook" : `Select all in playbook (${eligible.length})`}
+          </button>
+        ) : null}
+      </div>
+
+      {isExpanded ? (
+        <div className="mt-3 space-y-4 border-t border-[var(--line)] pt-4">
+          {pageItems.map((acc) => renderCard(acc, { hidePlaybookBadge: true }))}
+          {pager}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function AccountIntelligenceFeed({
   accounts,
   selection,
   pipelineRows = [],
   changeEvents = [],
+  playbooks = [],
   crmName,
   crmConnected = false,
   canSendToCrm = false,
@@ -131,6 +229,8 @@ export function AccountIntelligenceFeed({
   selection?: { selected: string[]; onChange: (ids: string[]) => void };
   pipelineRows?: PipelineRow[];
   changeEvents?: ChangeEvent[];
+  /** Playbooks of the workspace, to group the accounts by */
+  playbooks?: PlaybookView[];
   crmName?: string;
   crmConnected?: boolean;
   /** May this member send accounts to the CRM (tenant admin) */
@@ -143,6 +243,12 @@ export function AccountIntelligenceFeed({
   const [filterTab, setFilterTab] = useState<FilterTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(filtersActive > 0);
+  const [groupByPlaybook, setGroupByPlaybook] = useState(true);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+  const playbookMap = new Map(playbooks.map((pb) => [pb.templateKey, pb]));
+  const playbookName = (key: string | null | undefined) =>
+    key ? (playbookMap.get(key)?.name ?? humanize(key.replace(/^custom_/, ""))) : null;
 
   // Pipeline: deals recorded on these accounts
   const deals = pipelineRows.filter((r) => r.opportunity);
@@ -165,13 +271,37 @@ export function AccountIntelligenceFeed({
 
   const q = searchQuery.trim().toLowerCase();
   const filtered = accounts.filter((a) => {
-    if (q && ![a.name, a.domain, a.country].some((v) => v?.toLowerCase().includes(q))) return false;
+    if (q && ![a.name, a.domain, a.country, a.companySummary].some((v) => v?.toLowerCase().includes(q))) return false;
     if (filterTab === "tier1") return isTier1(a);
     if (filterTab === "tier2") return !isTier1(a);
     if (filterTab === "researched") return a.researchState === "researched";
     if (filterTab === "accepted") return a.acceptanceState === "accepted";
     return true;
   });
+
+  // Accounts grouped by playbook: the workspace's playbooks in their order, then others, unassigned last
+  const groupsMap = new Map<string, Account[]>();
+  for (const acc of filtered) {
+    const key = acc.playbookTemplateKey || "unassigned";
+    groupsMap.set(key, [...(groupsMap.get(key) ?? []), acc]);
+  }
+  const groupKeys = [
+    ...playbooks.map((pb) => pb.templateKey).filter((k) => groupsMap.has(k)),
+    ...[...groupsMap.keys()].filter((k) => k !== "unassigned" && !playbookMap.has(k)),
+    ...(groupsMap.has("unassigned") ? ["unassigned"] : []),
+  ];
+  const toggleGroup = (key: string) => setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  const expandAll = () => setExpandedGroups(Object.fromEntries(groupKeys.map((k) => [k, true])));
+  const collapseAll = () => setExpandedGroups({});
+  const toggleGroupSelection = (groupAccounts: Account[]) => {
+    if (!selection) return;
+    const eligible = groupAccounts.filter(canQueueResearch).map((a) => a.id);
+    if (!eligible.length) return;
+    const allOn = eligible.every((id) => selection.selected.includes(id));
+    selection.onChange(
+      allOn ? selection.selected.filter((id) => !eligible.includes(id)) : [...new Set([...selection.selected, ...eligible])],
+    );
+  };
 
   const { pageItems, pager, topRef } = usePagination(filtered, 10);
 
@@ -199,6 +329,133 @@ export function AccountIntelligenceFeed({
     { key: "researched", label: "Researched", count: researched.length },
     { key: "accepted", label: "Sales accepted", count: accepted.length },
   ];
+
+  const renderCard = (acc: Account, opts?: { hidePlaybookBadge?: boolean }) => {
+    const selected = selection?.selected.includes(acc.id) ?? false;
+    const canQueue = canQueueResearch(acc);
+    const deal = pipelineByAccount.get(acc.id)?.opportunity;
+    const status = statusLine(acc);
+    const tier1Acc = isTier1(acc);
+    const source = acc.source === "crm_import" ? `From ${crmName ?? "CRM"}` : (SOURCE_LABELS[acc.source] ?? humanize(acc.source));
+    const meta = [acc.domain, acc.country, `Updated ${ago(acc.updatedAt)}`].filter(Boolean);
+    const tag = "rounded-md bg-[#f3f2fb] px-2 py-0.5 text-[12.5px] font-medium text-[var(--plum)]";
+    const pbName = opts?.hidePlaybookBadge ? null : playbookName(acc.playbookTemplateKey);
+    return (
+      <div
+        key={acc.id}
+        className={`rounded-[18px] border bg-white p-4 shadow-[var(--card-shadow)] transition hover:shadow-[0_12px_32px_rgba(13,27,42,0.09)] sm:p-5 ${
+          selected ? "border-[var(--brand)] ring-2 ring-[var(--brand-tint)]" : "border-[var(--card-line)]"
+        }`}
+      >
+        <div className="flex items-start gap-3.5">
+          {selection ? (
+            <input
+              type="checkbox"
+              aria-label={`Select ${acc.name}`}
+              checked={selected}
+              disabled={!canQueue}
+              title={canQueue ? undefined : "Already being researched"}
+              onChange={() => toggleOne(acc.id)}
+              className="mt-6 h-4 w-4 shrink-0 cursor-pointer accent-[var(--brand)] disabled:cursor-not-allowed"
+            />
+          ) : null}
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-[var(--lilac)] to-[#e6e3f7] text-[17px] font-semibold text-[var(--foreground)]">
+            {initialsOf(acc.name)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Link
+                href={`/accounts/detail?id=${acc.id}`}
+                className="mr-1 truncate text-[19px] font-bold tracking-[-0.02em] hover:text-[var(--brand-active)]"
+              >
+                {acc.name}
+              </Link>
+              <span
+                className={`rounded-md px-2 py-0.5 text-[12.5px] font-semibold ${
+                  tier1Acc ? "bg-[#e6e3f7] text-[var(--foreground)]" : "bg-[#f3f2fb] text-[var(--plum)]"
+                }`}
+              >
+                {tier1Acc ? "Tier 1" : "Tier 2"}
+              </span>
+              {/* Playbook badge in the flat view only: inside a playbook group it would repeat the heading */}
+              {pbName ? (
+                <span className="inline-flex items-center gap-1 rounded-md bg-[var(--brand-tint)] px-2 py-0.5 text-[12px] font-semibold text-[var(--brand-active)]">
+                  <BookOpenCheck size={12} className="shrink-0" aria-hidden />
+                  {pbName}
+                </span>
+              ) : null}
+              <span className={tag}>{source}</span>
+              <span className={tag}>{humanize(acc.acceptanceState)}</span>
+              {deal ? (
+                <span className="rounded-md bg-[var(--badge-green-bg)] px-2 py-0.5 text-[12.5px] font-medium text-[var(--badge-green-fg)]">
+                  {OPPORTUNITY_STAGE_LABELS[deal.stage]}
+                  {deal.valueAmount != null ? ` · ${formatMoney(deal.valueAmount, deal.currency)}` : ""}
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-1 truncate text-[14px] text-[var(--plum)]">{meta.join(" • ")}</p>
+          </div>
+          <ScoreBadge score={acc.fitScore} />
+        </div>
+
+        {/* Company overview: one sentence on what the company does */}
+        {acc.companySummary ? (
+          <div className="mt-3 w-full rounded-[14px] border border-[var(--card-line)] bg-[var(--soft)] px-4 py-2.5">
+            <span className="block text-[11px] font-bold uppercase tracking-wider text-[var(--plum)]">Company overview</span>
+            <p className="mt-1 text-[13.5px] leading-relaxed text-[var(--foreground)]" title={acc.companySummary}>
+              {acc.companySummary}
+            </p>
+          </div>
+        ) : (
+          <div className="mt-3 flex w-full flex-wrap items-center justify-between gap-2 rounded-[14px] border border-dashed border-[var(--card-line)] px-4 py-2 text-[12.5px] text-[var(--plum-muted)]">
+            <span className="flex items-center gap-2">
+              <span className="rounded bg-[var(--lilac)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--plum)]">
+                Company overview
+              </span>
+              <span className="italic">Not generated yet</span>
+            </span>
+            <Link
+              href={`/accounts/detail?id=${acc.id}`}
+              className="inline-flex items-center gap-1 font-medium text-[var(--brand-active)] hover:underline"
+            >
+              Run research &rarr;
+            </Link>
+          </div>
+        )}
+
+        <p className="mt-3.5 flex gap-2.5 rounded-[12px] bg-[#f6f5fc] px-4 py-2.5 text-[14px] leading-relaxed">
+          <span
+            className={`mt-[7px] h-2 w-2 shrink-0 rounded-full ${status.live ? "bg-[var(--brand)]" : "bg-[#B8C3CF]"}`}
+            aria-hidden
+          />
+          <span className="min-w-0 line-clamp-2">
+            <span className={`font-semibold ${status.live ? "text-[var(--brand-active)]" : "text-[var(--foreground)]"}`}>
+              {status.label}
+            </span>{" "}
+            {status.text}
+          </span>
+        </p>
+
+        <div className="mt-3.5 flex flex-wrap items-center justify-end gap-2">
+          <Link
+            href={`/accounts/detail?id=${acc.id}`}
+            className="inline-flex items-center rounded-[12px] bg-[#e9e8fb] px-4 py-2 text-[14px] font-medium text-[var(--foreground)] transition hover:brightness-[0.97]"
+          >
+            View account brief
+          </Link>
+          {crmConnected && crmName && canSendToCrm && acc.acceptanceState === "accepted" ? (
+            <Link
+              href={`/accounts/detail?id=${acc.id}&tab=workflow&step=sell`}
+              className="inline-flex items-center gap-2 rounded-[12px] bg-[#f6f5fc] px-4 py-2 text-[14px] font-medium text-[var(--foreground)] transition hover:text-[var(--brand-active)]"
+            >
+              <RefreshCw size={15} className="text-[var(--brand-active)]" aria-hidden />
+              Send to {crmName}
+            </Link>
+          ) : null}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="w-full min-w-0 max-w-full space-y-6">
@@ -247,8 +504,8 @@ export function AccountIntelligenceFeed({
 
       {/* Tabs + search */}
       <div className="rounded-[20px] border border-[var(--card-line)] bg-white p-2 shadow-[var(--card-shadow)]">
-        <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
-          <div role="tablist" aria-label="Account lists" className="flex min-w-0 gap-1 overflow-x-auto">
+        <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
+          <div role="tablist" aria-label="Account lists" className="flex min-w-0 gap-1 overflow-x-auto pb-1 2xl:pb-0">
             {tabs.map((t) => {
               const active = t.key === filterTab;
               return (
@@ -274,8 +531,8 @@ export function AccountIntelligenceFeed({
               );
             })}
           </div>
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <label className="relative min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2 2xl:max-w-xl 2xl:flex-1">
+            <label className="relative min-w-[180px] flex-1">
               <span className="sr-only">Filter accounts</span>
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--plum-muted)]" aria-hidden />
               <input
@@ -286,6 +543,31 @@ export function AccountIntelligenceFeed({
                 className="w-full rounded-[14px] bg-[var(--soft)] py-3 pl-11 pr-4 text-[15px] text-[var(--foreground)] outline-none placeholder:text-[var(--plum-muted)] focus:ring-2 focus:ring-[var(--brand-tint)]"
               />
             </label>
+            {/* View: one flat list, or grouped by playbook */}
+            <div role="group" aria-label="View" className="flex shrink-0 items-center rounded-[12px] border border-[var(--card-line)] bg-[var(--soft)] p-1">
+              {(
+                [
+                  [false, "Flat", LayoutList, "View accounts in a single list"],
+                  [true, "By playbook", Layers, "Group accounts by playbook"],
+                ] as const
+              ).map(([grouped, label, Icon, title]) => (
+                <button
+                  key={label}
+                  type="button"
+                  aria-pressed={groupByPlaybook === grouped}
+                  onClick={() => setGroupByPlaybook(grouped)}
+                  title={title}
+                  className={`flex items-center gap-1.5 rounded-[9px] px-3 py-2 text-[13px] font-medium transition ${
+                    groupByPlaybook === grouped
+                      ? "bg-white font-semibold text-[var(--foreground)] shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+                      : "text-[var(--plum)] hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  <Icon size={15} aria-hidden />
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              ))}
+            </div>
             {filters ? (
               <button
                 type="button"
@@ -312,7 +594,7 @@ export function AccountIntelligenceFeed({
       {/* Feed + side column */}
       <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
         <div ref={topRef} className="min-w-0 scroll-mt-24 space-y-5">
-          {selection && pageItems.length ? (
+          {selection && !groupByPlaybook && pageItems.length ? (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] bg-white/80 px-5 py-3 text-[14px] text-[var(--plum)] shadow-[var(--card-shadow)]">
               <label className="flex cursor-pointer select-none items-center gap-3 font-semibold text-[var(--foreground)]">
                 <input
@@ -341,101 +623,59 @@ export function AccountIntelligenceFeed({
             </Panel>
           ) : null}
 
-          {pageItems.map((acc) => {
-            const selected = selection?.selected.includes(acc.id) ?? false;
-            const canQueue = canQueueResearch(acc);
-            const deal = pipelineByAccount.get(acc.id)?.opportunity;
-            const status = statusLine(acc);
-            const tier1Acc = isTier1(acc);
-            const source = acc.source === "crm_import" ? `From ${crmName ?? "CRM"}` : (SOURCE_LABELS[acc.source] ?? humanize(acc.source));
-            const meta = [acc.domain, acc.country, `Updated ${ago(acc.updatedAt)}`].filter(Boolean);
-            const tag = "rounded-md bg-[#f3f2fb] px-2 py-0.5 text-[12.5px] font-medium text-[var(--plum)]";
-            return (
-              <div
-                key={acc.id}
-                className={`rounded-[18px] border bg-white p-4 shadow-[var(--card-shadow)] transition hover:shadow-[0_12px_32px_rgba(13,27,42,0.09)] sm:p-5 ${
-                  selected ? "border-[var(--brand)] ring-2 ring-[var(--brand-tint)]" : "border-[var(--card-line)]"
-                }`}
-              >
-                <div className="flex items-start gap-3.5">
-                  {selection ? (
-                    <input
-                      type="checkbox"
-                      aria-label={`Select ${acc.name}`}
-                      checked={selected}
-                      disabled={!canQueue}
-                      title={canQueue ? undefined : "Already being researched"}
-                      onChange={() => toggleOne(acc.id)}
-                      className="mt-6 h-4 w-4 shrink-0 cursor-pointer accent-[var(--brand)] disabled:cursor-not-allowed"
-                    />
-                  ) : null}
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-[var(--lilac)] to-[#e6e3f7] text-[17px] font-semibold text-[var(--foreground)]">
-                    {initialsOf(acc.name)}
+          {groupByPlaybook ? (
+            <div className="space-y-4">
+              {groupKeys.length && filtered.length ? (
+                <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-[13.5px] text-[var(--plum)]">
+                  <span>
+                    Grouped by playbook ·{" "}
+                    <strong className="font-semibold text-[var(--foreground)]">
+                      {groupKeys.length} {groupKeys.length === 1 ? "playbook" : "playbooks"}
+                    </strong>
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <Link
-                        href={`/accounts/detail?id=${acc.id}`}
-                        className="mr-1 truncate text-[19px] font-bold tracking-[-0.02em] hover:text-[var(--brand-active)]"
+                  {groupKeys.length > 1 ? (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={expandAll}
+                        className="inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--card-line)] bg-white px-2.5 py-1 text-[12px] font-medium text-[var(--foreground)] shadow-sm transition hover:bg-[var(--lilac)]"
                       >
-                        {acc.name}
-                      </Link>
-                      <span
-                        className={`rounded-md px-2 py-0.5 text-[12.5px] font-semibold ${
-                          tier1Acc ? "bg-[#e6e3f7] text-[var(--foreground)]" : "bg-[#f3f2fb] text-[var(--plum)]"
-                        }`}
+                        <ChevronsUpDown size={13} aria-hidden />
+                        Expand all
+                      </button>
+                      <button
+                        type="button"
+                        onClick={collapseAll}
+                        className="inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--card-line)] bg-white px-2.5 py-1 text-[12px] font-medium text-[var(--foreground)] shadow-sm transition hover:bg-[var(--lilac)]"
                       >
-                        {tier1Acc ? "Tier 1" : "Tier 2"}
-                      </span>
-                      <span className={tag}>{source}</span>
-                      <span className={tag}>{humanize(acc.acceptanceState)}</span>
-                      {deal ? (
-                        <span className="rounded-md bg-[var(--badge-green-bg)] px-2 py-0.5 text-[12.5px] font-medium text-[var(--badge-green-fg)]">
-                          {OPPORTUNITY_STAGE_LABELS[deal.stage]}
-                          {deal.valueAmount != null ? ` · ${formatMoney(deal.valueAmount, deal.currency)}` : ""}
-                        </span>
-                      ) : null}
+                        <ChevronsDownUp size={13} aria-hidden />
+                        Collapse all
+                      </button>
                     </div>
-                    <p className="mt-1 truncate text-[14px] text-[var(--plum)]">{meta.join(" • ")}</p>
-                  </div>
-                  <ScoreBadge score={acc.fitScore} />
-                </div>
-
-                <p className="mt-3.5 flex gap-2.5 rounded-[12px] bg-[#f6f5fc] px-4 py-2.5 text-[14px] leading-relaxed">
-                  <span
-                    className={`mt-[7px] h-2 w-2 shrink-0 rounded-full ${status.live ? "bg-[var(--brand)]" : "bg-[#B8C3CF]"}`}
-                    aria-hidden
-                  />
-                  <span className="min-w-0 line-clamp-2">
-                    <span className={`font-semibold ${status.live ? "text-[var(--brand-active)]" : "text-[var(--foreground)]"}`}>
-                      {status.label}
-                    </span>{" "}
-                    {status.text}
-                  </span>
-                </p>
-
-                <div className="mt-3.5 flex flex-wrap items-center justify-end gap-2">
-                  <Link
-                    href={`/accounts/detail?id=${acc.id}`}
-                    className="inline-flex items-center rounded-[12px] bg-[#e9e8fb] px-4 py-2 text-[14px] font-medium text-[var(--foreground)] transition hover:brightness-[0.97]"
-                  >
-                    View account brief
-                  </Link>
-                  {crmConnected && crmName && canSendToCrm && acc.acceptanceState === "accepted" ? (
-                    <Link
-                      href={`/accounts/detail?id=${acc.id}&tab=workflow&step=sell`}
-                      className="inline-flex items-center gap-2 rounded-[12px] bg-[#f6f5fc] px-4 py-2 text-[14px] font-medium text-[var(--foreground)] transition hover:text-[var(--brand-active)]"
-                    >
-                      <RefreshCw size={15} className="text-[var(--brand-active)]" aria-hidden />
-                      Send to {crmName}
-                    </Link>
                   ) : null}
                 </div>
-              </div>
-            );
-          })}
+              ) : null}
 
-          {pager}
+              {groupKeys.map((key) => (
+                <PlaybookGroupSection
+                  key={key}
+                  groupKey={key}
+                  groupAccounts={groupsMap.get(key) ?? []}
+                  isExpanded={Boolean(expandedGroups[key])}
+                  onToggle={() => toggleGroup(key)}
+                  playbook={playbookMap.get(key)}
+                  selection={selection}
+                  onToggleSelection={() => toggleGroupSelection(groupsMap.get(key) ?? [])}
+                  renderCard={renderCard}
+                />
+              ))}
+            </div>
+          ) : (
+            <>
+              {pageItems.map((acc) => renderCard(acc))}
+              {pager}
+            </>
+          )}
         </div>
 
         {/* Side column */}

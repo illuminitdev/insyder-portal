@@ -93,6 +93,7 @@ export type DiscoveryRow = {
   name: string;
   domain: string | null;
   country: string | null;
+  companySummary?: string | null;
   isNew: boolean;
   identityNeedsReview: boolean;
   trigger: { title: string | null; summary: string | null; eventDate: string | null; url: string };

@@ -26,6 +26,7 @@ import {
   type PipelineRow,
 } from "@/lib/api/accounts";
 import { listChangeEvents, type ChangeEvent } from "@/lib/api/monitors";
+import { listPlaybooks, type PlaybookView } from "@/lib/api/playbooks";
 import { Button } from "@/components/ui/Button";
 import { Field, FormError, inputClass } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
@@ -37,6 +38,7 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
   const [merges, setMerges] = useState<MergeCandidate[]>([]);
   const [pipelineRows, setPipelineRows] = useState<PipelineRow[]>([]);
   const [changeEvents, setChangeEvents] = useState<ChangeEvent[]>([]);
+  const [playbooks, setPlaybooks] = useState<PlaybookView[]>([]);
   const [researchState, setResearchState] = usePersistentState(`${workspaceId}:accounts:research`, "");
   const [acceptanceState, setAcceptanceState] = usePersistentState(`${workspaceId}:accounts:acceptance`, "");
   const [source, setSource] = usePersistentState(`${workspaceId}:accounts:source`, "");
@@ -60,6 +62,8 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
   const [newAccountName, setNewAccountName] = useState("");
   const [newAccountDomain, setNewAccountDomain] = useState("");
   const [newAccountCountry, setNewAccountCountry] = useState("United Kingdom");
+  const [newAccountSummary, setNewAccountSummary] = useState("");
+  const [newAccountPlaybook, setNewAccountPlaybook] = useState("");
   const [addingAccount, setAddingAccount] = useState(false);
   const [addAccountError, setAddAccountError] = useState<string | null>(null);
 
@@ -81,13 +85,15 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
 
   const refresh = useCallback(async () => {
     try {
-      const [a, m, pipe, changes] = await Promise.all([
+      const [a, m, pipe, changes, pb] = await Promise.all([
         listAccounts(workspaceId, { researchState, acceptanceState, source, archived: archivedView ? "only" : undefined }),
         can("import") ? listMergeCandidates(workspaceId) : Promise.resolve({ candidates: [] }),
         getPipeline(workspaceId).catch(() => ({ rows: [] })),
         listChangeEvents(workspaceId).catch(() => ({ changeEvents: [] })),
+        listPlaybooks(workspaceId).catch(() => ({ playbooks: [] as PlaybookView[] })),
       ]);
       setAccounts(a.accounts);
+      setPlaybooks(pb.playbooks);
       const ok = new Set(a.accounts.filter(canQueueResearch).map((x) => x.id));
       setSelected((cur) => cur.filter((id) => ok.has(id)));
       setMerges(m.candidates);
@@ -161,9 +167,13 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
         name: newAccountName.trim(),
         domain: newAccountDomain.trim() || undefined,
         country: newAccountCountry.trim() || undefined,
+        companySummary: newAccountSummary.trim() || undefined,
+        playbookTemplateKey: newAccountPlaybook || undefined,
       });
       setNewAccountName("");
       setNewAccountDomain("");
+      setNewAccountSummary("");
+      setNewAccountPlaybook("");
       setAddModalOpen(false);
       await refresh();
     } catch (err) {
@@ -381,6 +391,7 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
           selection={canResearch ? { selected, onChange: setSelected } : undefined}
           pipelineRows={pipelineRows}
           changeEvents={changeEvents}
+          playbooks={playbooks}
           crmName={crm?.providerLabel}
           crmConnected={Boolean(crm)}
           canSendToCrm={can("manage_integrations")}
@@ -494,6 +505,30 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
                 className={inputClass}
               />
             </Field>
+
+            <Field label="What the company does (one sentence, optional)">
+              <input
+                type="text"
+                value={newAccountSummary}
+                onChange={(e) => setNewAccountSummary(e.target.value)}
+                placeholder="e.g. Enterprise colocation and hybrid-cloud infrastructure provider"
+                maxLength={1000}
+                className={inputClass}
+              />
+            </Field>
+
+            {playbooks.length ? (
+              <Field label="Playbook (optional)">
+                <select value={newAccountPlaybook} onChange={(e) => setNewAccountPlaybook(e.target.value)} className={inputClass}>
+                  <option value="">None / Unassigned</option>
+                  {playbooks.filter((p) => !p.archived).map((p) => (
+                    <option key={p.templateKey} value={p.templateKey}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ) : null}
 
             <FormError message={addAccountError} />
 

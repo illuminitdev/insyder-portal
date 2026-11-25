@@ -21,6 +21,10 @@ export type Account = {
   whyNowAt?: string | null;
   /** Archived as not relevant: hidden from lists by default, restorable */
   archivedAt?: string | null;
+  /** 1-sentence summary of what the company is/does (company overview) */
+  companySummary?: string | null;
+  /** Playbook this account belongs to */
+  playbookTemplateKey?: string | null;
 };
 
 export type WhyNowCitation = { url: string; title: string | null; publishedDate: string | null };
@@ -112,7 +116,7 @@ export type MergeCandidate = {
 
 export function listAccounts(
   workspaceId: string,
-  filters: { acceptanceState?: string; researchState?: string; ownerUserId?: string; source?: string; archived?: "only" } = {},
+  filters: { acceptanceState?: string; researchState?: string; ownerUserId?: string; source?: string; archived?: "only"; playbookTemplateKey?: string } = {},
 ) {
   const qs = new URLSearchParams(Object.entries(filters).filter(([, v]) => v) as [string, string][]);
   return api<{ accounts: Account[] }>(
@@ -160,10 +164,22 @@ export function getPipeline(workspaceId: string) {
 
 export function createAccount(
   workspaceId: string,
-  body: { name: string; domain?: string; country?: string },
+  body: { name: string; domain?: string; country?: string; companySummary?: string; playbookTemplateKey?: string },
 ) {
   return api<{ account: Account }>(`/v1/workspaces/${workspaceId}/accounts`, {
     method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+/** Edit an account's company overview sentence or playbook */
+export function updateAccount(
+  workspaceId: string,
+  accountId: string,
+  body: { companySummary?: string | null; playbookTemplateKey?: string | null },
+) {
+  return api<{ account: Account }>(`/v1/workspaces/${workspaceId}/accounts/${accountId}`, {
+    method: "PATCH",
     body: JSON.stringify(body),
   });
 }

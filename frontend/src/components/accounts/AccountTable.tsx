@@ -84,13 +84,25 @@ export function AccountTable({
                   </td>
                 ) : null}
                 <td className="px-4 py-3">
-                  <Link href={`/accounts/detail?id=${a.id}`} className="font-semibold text-[var(--foreground)] hover:text-[var(--brand-active)]">
-                    {a.name}
-                  </Link>
-                  {a.source === "crm_import" ? (
-                    <span className="ml-2 rounded-full bg-[#fff1ec] px-2 py-0.5 text-[11px] font-medium text-[#c2410c]">From CRM</span>
-                  ) : a.source !== "manual" ? (
-                    <span className="ml-2 text-xs text-[var(--muted)]">{a.source}</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Link href={`/accounts/detail?id=${a.id}`} className="font-semibold text-[var(--foreground)] hover:text-[var(--brand-active)]">
+                      {a.name}
+                    </Link>
+                    {a.playbookTemplateKey ? (
+                      <span className="rounded-md bg-[var(--brand-tint)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--brand-active)]">
+                        {a.playbookTemplateKey.replace(/^custom_/, "").replace(/_/g, " ")}
+                      </span>
+                    ) : null}
+                    {a.source === "crm_import" ? (
+                      <span className="rounded-full bg-[#fff1ec] px-2 py-0.5 text-[11px] font-medium text-[#c2410c]">From CRM</span>
+                    ) : a.source !== "manual" ? (
+                      <span className="text-xs text-[var(--muted)]">{a.source}</span>
+                    ) : null}
+                  </div>
+                  {a.companySummary ? (
+                    <p className="mt-0.5 line-clamp-1 max-w-md text-xs font-normal text-[var(--muted)]" title={a.companySummary}>
+                      {a.companySummary}
+                    </p>
                   ) : null}
                 </td>
                 <td className="px-4 py-3 text-[var(--muted)]">

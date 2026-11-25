@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, ChevronRight, ChevronsUpDown, CircleHelp, LogOut, Menu, UserRound, X } from "lucide-react";
+import { Check, ChevronRight, ChevronsUpDown, CircleHelp, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound, X } from "lucide-react";
 import { logout, type WorkspaceMembership } from "../../lib/auth/session";
 import { ROLE_LABELS } from "../../lib/auth/capabilities";
 import { useWorkspace } from "../../hooks/useWorkspace";
 import { useWorkspaceBranding } from "@/lib/branding";
+import { useSidebarCollapsed } from "@/hooks/useSidebarCollapsed";
 import { SubNav } from "../ui/SubNav";
 import { AttentionBell } from "./AttentionBell";
 import { CrmStatusChip } from "./CrmStatusChip";
@@ -60,6 +61,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Desktop: the left menu can be closed so the page gets the whole screen
+  const [collapsed, setCollapsed] = useSidebarCollapsed();
   const { can, role, user, workspaceName, workspaces, workspaceId, selectWorkspace } = useWorkspace();
   // The workspace's white label colours, if its tenant admin set any
   useWorkspaceBranding(workspaceId);
@@ -156,9 +159,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar: slide-over drawer on mobile/tablet, fixed on lg+ */}
       <aside
-        className={`app-sidebar fixed inset-y-0 left-0 z-50 flex w-[var(--sidebar-width)] flex-col border-r border-[var(--sidebar-border)] transition-transform duration-200 ease-in-out lg:z-30 lg:translate-x-0 print:hidden ${
+        className={`app-sidebar fixed inset-y-0 left-0 z-50 flex w-[var(--sidebar-width)] flex-col border-r border-[var(--sidebar-border)] transition-[transform,visibility] duration-200 ease-in-out lg:z-30 print:hidden ${
           mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
-        }`}
+        } ${collapsed ? "lg:invisible lg:-translate-x-full" : "lg:visible lg:translate-x-0"}`}
       >
         {/* Brand & Mobile Close button */}
         <div className="flex h-[84px] shrink-0 items-center justify-between px-5">
@@ -172,6 +175,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             aria-label="Close menu"
           >
             <X size={18} aria-hidden />
+          </button>
+          <button
+            type="button"
+            className="hidden h-9 w-9 items-center justify-center rounded-[10px] text-[var(--sidebar-muted)] transition-colors hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-strong)] lg:flex"
+            onClick={() => setCollapsed(true)}
+            aria-label="Close menu"
+            title="Close menu"
+          >
+            <PanelLeftClose size={19} strokeWidth={1.75} aria-hidden />
           </button>
         </div>
 
@@ -282,7 +294,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       />
 
       {/* Main content: full width on mobile/tablet, pushed right on lg+ */}
-      <div className="min-h-screen lg:ml-[var(--sidebar-width)] print:ml-0">
+      <div
+        className={`min-h-screen transition-[margin] duration-200 ease-in-out print:ml-0 ${collapsed ? "lg:ml-0" : "lg:ml-[var(--sidebar-width)]"}`}
+      >
         <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between gap-3 border-b border-[var(--sidebar-line)] bg-white/85 px-4 backdrop-blur sm:px-6 lg:px-9 print:hidden">
           {/* Mobile hamburger button + mobile logo */}
           <div className="flex items-center gap-3 lg:hidden">
@@ -296,6 +310,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
             <Link href={portalHome(portal, can)}>{brand("sm")}</Link>
           </div>
+
+          {/* Desktop with the menu closed: button to open it again, and the logo */}
+          {collapsed ? (
+            <div className="hidden shrink-0 items-center gap-3 lg:flex">
+              <button
+                type="button"
+                className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[var(--line)] bg-white text-[var(--foreground)] transition-colors hover:bg-[var(--chip-bg)]"
+                onClick={() => setCollapsed(false)}
+                aria-label="Open menu"
+                title="Open menu"
+              >
+                <PanelLeftOpen size={18} strokeWidth={1.75} aria-hidden />
+              </button>
+              <Link href={portalHome(portal, can)}>{brand("sm")}</Link>
+              <span className="h-6 w-px bg-[var(--line)]" aria-hidden />
+            </div>
+          ) : null}
 
           {/* Breadcrumb: Intelligence HQ › workspace */}
           <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-3 text-[16px] lg:flex">
@@ -328,7 +359,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6 sm:py-6 lg:px-9 lg:py-8 print:max-w-none print:p-0">
+        {/* With the menu closed the page uses the full width */}
+        <main
+          className={`mx-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-9 lg:py-8 print:max-w-none print:p-0 ${collapsed ? "max-w-[1500px] lg:max-w-none" : "max-w-[1500px]"}`}
+        >
           {subItems.length > 1 ? (
             <div className="print:hidden">
               <SubNav items={subItems} />

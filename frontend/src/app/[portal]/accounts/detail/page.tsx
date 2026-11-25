@@ -113,8 +113,13 @@ const SKIP_REVIEW_GROUPS: typeof GROUPS = [
   },
   GROUPS[3],
 ];
-const partToGroup = (key: string | null) =>
-  key === "decision" ? "qualify" : key ? (GROUPS.find((g) => g.parts.includes(key))?.key ?? key) : null;
+/** The step that holds a part. "Sales decision" only moves under Qualify when review is skipped */
+const partToGroup = (key: string | null, isSkipReview = false) => {
+  if (!key) return null;
+  if (isSkipReview && key === "decision") return "qualify";
+  const activeGroups = isSkipReview ? SKIP_REVIEW_GROUPS : GROUPS;
+  return activeGroups.find((g) => g.parts.includes(key))?.key ?? key;
+};
 
 function AccountBrief({ workspaceId, accountId }: { workspaceId: string; accountId: string }) {
   const { can, user, role } = useWorkspace();
@@ -176,7 +181,6 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
       window.removeEventListener("resize", place);
     };
   }, [menuOpen]);
-  const [copied, setCopied] = useState(false);
   const [skipped, setSkipped] = useState<Record<string, boolean>>({});
   const skipKey = `insyder:${user?.id ?? "anon"}:${workspaceId}:${accountId}:skipped-steps`;
 
@@ -210,7 +214,7 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
         : "overview";
 
   function selectStep(key: string) {
-    openedOn.current = partToGroup(key) ?? key;
+    openedOn.current = partToGroup(key, skipReview) ?? key;
     router.replace(portalHref(`/accounts/detail?id=${accountId}&tab=workflow&step=${key}`), { scroll: false });
     let tries = 0;
     const tick = () => {
@@ -990,7 +994,7 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
   const current = steps.find((s) => s.mine && !s.done && !s.lockedReason && !s.optional)?.key;
   const selected =
     // Links to an old step (e.g. ?step=evidence) open the step that now holds it
-    isOpen(partToGroup(requestedStep)) ??
+    isOpen(partToGroup(requestedStep, skipReview)) ??
     isOpen(openedOn.current) ??
     (state === "needs_research" && isMine("evidence") ? "research" : null) ??
     current ??
@@ -1014,8 +1018,6 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     } catch {
       setLocalError("Could not copy the link. Copy it from the address bar instead.");
     }
@@ -1155,9 +1157,9 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
           type="button"
           disabled={secondary.disabled}
           onClick={secondary.onClick}
-          className="inline-flex items-center gap-2.5 rounded-[14px] bg-white px-5 py-3 text-[15.5px] font-medium text-[var(--foreground)] shadow-[0_4px_14px_rgba(13,27,42,0.1)] transition hover:text-[var(--brand-active)] disabled:opacity-50"
+          className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[12px] border border-[var(--card-line)] bg-white px-4 py-2.5 text-[14.5px] font-semibold text-[var(--foreground)] shadow-[0_2px_8px_rgba(13,27,42,0.06)] transition hover:text-[var(--brand-active)] disabled:opacity-50"
         >
-          <secondary.Icon size={19} className="text-[var(--link)]" aria-hidden />
+          <secondary.Icon size={17} className="text-[var(--link)]" aria-hidden />
           {secondary.label}
         </button>
       ) : null}
@@ -1165,9 +1167,9 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
         type="button"
         disabled={primary.disabled}
         onClick={primary.onClick}
-        className="inline-flex items-center gap-2.5 rounded-[14px] bg-gradient-to-r from-[var(--brand-active)] to-[var(--brand)] px-5 py-3 text-[15.5px] font-semibold text-[var(--on-gradient)] transition hover:brightness-110 disabled:opacity-60"
+        className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[12px] bg-gradient-to-r from-[var(--brand-active)] to-[var(--brand)] px-4 py-2.5 text-[14.5px] font-semibold text-[var(--on-gradient)] transition hover:brightness-110 disabled:opacity-60"
       >
-        <primary.Icon size={19} aria-hidden />
+        <primary.Icon size={17} aria-hidden />
         {primary.label}
       </button>
     </>
@@ -1262,21 +1264,11 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
             ID: {account.id.slice(0, 8).toUpperCase()}
           </span>
         </nav>
-        <div className="flex items-center gap-3">
-          {researching ? (
-            <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[14.5px] font-semibold text-[var(--badge-green-fg)] shadow-[0_2px_10px_rgba(13,27,42,0.06)]">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-[#22a35a]" aria-hidden /> Research running
-            </span>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => void copyLink()}
-            className="inline-flex items-center gap-2 rounded-[12px] bg-white px-4 py-2 text-[15px] font-medium text-[var(--foreground)] shadow-[0_2px_10px_rgba(13,27,42,0.06)] hover:text-[var(--brand-active)]"
-          >
-            {copied ? <Check size={17} aria-hidden /> : <Share2 size={17} aria-hidden />}
-            {copied ? "Link copied" : "Share"}
-          </button>
-        </div>
+        {researching ? (
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[14.5px] font-semibold text-[var(--badge-green-fg)] shadow-[0_2px_10px_rgba(13,27,42,0.06)]">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[#22a35a]" aria-hidden /> Research running
+          </span>
+        ) : null}
       </div>
 
       <AccountHero brief={brief} crm={crmStatus} actions={actions} menu={moreMenu} />

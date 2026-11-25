@@ -160,6 +160,9 @@ export function AccountHero({
   };
   const facts: Array<{ Icon: LucideIcon; text: string }> = [
     account.country ? { Icon: MapPin, text: account.country } : null,
+    account.playbookTemplateKey
+      ? { Icon: Target, text: `Playbook: ${humanize(account.playbookTemplateKey.replace(/^custom_/, ""))}` }
+      : null,
     account.legalName && account.legalName !== account.name ? { Icon: Building2, text: account.legalName } : null,
     { Icon: UserRound, text: `Owner: ${owner?.name ?? "unassigned"}` },
     { Icon: Inbox, text: `Added via ${humanize(account.source)}` },
@@ -177,57 +180,75 @@ export function AccountHero({
   return (
     <Panel className="relative">
       {menu ? <div className="absolute right-5 top-5 z-10">{menu}</div> : null}
-      <div className={`flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between ${menu ? "pr-14" : ""}`}>
-        <div className="flex min-w-0 gap-5">
-          <div className="relative shrink-0">
-            <span className="flex h-[76px] w-[76px] items-center justify-center rounded-[18px] bg-gradient-to-br from-[var(--lilac)] to-[#e8e6fb] text-[22px] font-semibold text-[var(--foreground)] shadow-[0_6px_18px_rgba(13,27,42,0.12)]">
-              {initialsOf(account.name)}
+
+      {/* Identity: logo, name, website, overview, status */}
+      <div className={`flex min-w-0 gap-5 ${menu ? "pr-14" : ""}`}>
+        <div className="relative shrink-0">
+          <span className="flex h-[68px] w-[68px] items-center justify-center rounded-[18px] bg-gradient-to-br from-[var(--lilac)] to-[#e8e6fb] text-[21px] font-semibold text-[var(--foreground)] shadow-[0_6px_18px_rgba(13,27,42,0.12)]">
+            {initialsOf(account.name)}
+          </span>
+          {account.acceptanceState === "accepted" ? (
+            <span
+              className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--badge-green-fg)] text-white ring-4 ring-white"
+              title="Accepted by sales"
+            >
+              <BadgeCheck size={17} aria-label="Accepted by sales" />
             </span>
-            {account.acceptanceState === "accepted" ? (
-              <span
-                className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--badge-green-fg)] text-white ring-4 ring-white"
-                title="Accepted by sales"
-              >
-                <BadgeCheck size={17} aria-label="Accepted by sales" />
+          ) : null}
+        </div>
+        <div className="min-w-0 flex-1 space-y-3">
+          <div>
+            <h1 className="break-words text-[26px] font-bold leading-tight tracking-[-0.03em] sm:text-[32px]">{account.name}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {account.domain ? (
+                <a
+                  href={`https://${account.domain}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[15px] font-medium text-[var(--plum)] hover:text-[var(--brand-active)]"
+                >
+                  {account.domain} <ArrowUpRight size={15} aria-hidden />
+                </a>
+              ) : (
+                <span className="text-[14.5px] text-[var(--muted)]">No domain</span>
+              )}
+              <span className="text-[var(--line)]" aria-hidden>
+                |
               </span>
-            ) : null}
-          </div>
-          <div className="min-w-0 space-y-2.5">
-            <h1 className="break-words text-[30px] font-bold leading-tight tracking-[-0.03em] sm:text-[38px]">{account.name}</h1>
-            {account.domain ? (
-              <a
-                href={`https://${account.domain}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-[16px] text-[var(--plum)] hover:text-[var(--brand-active)]"
-              >
-                {account.domain} <ArrowUpRight size={16} aria-hidden />
-              </a>
-            ) : (
-              <p className="text-[15px] text-[var(--muted)]">No domain</p>
-            )}
-            <div className="flex flex-wrap gap-2">
-              <span className={`rounded-lg px-3 py-1 text-[12.5px] font-bold uppercase tracking-[0.08em] ${pill.cls}`}>
+              <span className={`rounded-lg px-2.5 py-0.5 text-[12px] font-bold uppercase tracking-[0.08em] ${pill.cls}`}>
                 {pill.label}
               </span>
-              <span className="rounded-lg bg-[var(--lilac)] px-3 py-1 text-[13.5px] font-medium text-[var(--plum)]">
+              <span className="rounded-lg bg-[var(--lilac)] px-2.5 py-0.5 text-[13px] font-medium text-[var(--plum)]">
                 {RESEARCH_LABEL[account.researchState] ?? humanize(account.researchState)}
               </span>
             </div>
-            <ul className="space-y-1.5 pt-1">
-              {facts.map(({ Icon, text }) => (
-                <li key={text} className="flex items-center gap-2.5 text-[15px] text-[var(--plum)]">
-                  <Icon size={17} className="shrink-0 text-[var(--plum-muted)]" aria-hidden />
-                  {text}
-                </li>
-              ))}
-            </ul>
           </div>
+          {account.companySummary ? (
+            <div className="max-w-4xl rounded-[12px] border border-[var(--card-line)] bg-[var(--soft)] px-4 py-3">
+              <span className="block text-[11px] font-bold uppercase tracking-wider text-[var(--plum)]">Company overview</span>
+              <p className="mt-1 text-[15px] leading-relaxed text-[var(--foreground)]">{account.companySummary}</p>
+            </div>
+          ) : (
+            <div className="max-w-4xl rounded-[12px] border border-dashed border-[var(--card-line)] px-4 py-2.5 text-[13.5px] italic text-[var(--plum-muted)]">
+              Company overview will be generated when you run research.
+            </div>
+          )}
         </div>
+      </div>
 
-        <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+      {/* Footer: facts on the left, CRM status and the next actions side by side on the right */}
+      <div className="mt-5 flex flex-col gap-4 border-t border-[var(--line)] pt-4 lg:flex-row lg:items-center lg:justify-between">
+        <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {facts.map(({ Icon, text }) => (
+            <li key={text} className="flex items-center gap-2 text-[14px] text-[var(--plum)]">
+              <Icon size={16} className="shrink-0 text-[var(--plum-muted)]" aria-hidden />
+              {text}
+            </li>
+          ))}
+        </ul>
+        <div className="flex shrink-0 flex-wrap items-center gap-2.5 lg:flex-nowrap lg:justify-end">
           {crm?.configured ? (
-            <div className="flex items-center gap-3 rounded-[14px] bg-[var(--lilac)] px-4 py-2.5">
+            <div className="flex items-center gap-2.5 rounded-[12px] bg-[var(--lilac)] px-3.5 py-2">
               <span
                 className={`h-2.5 w-2.5 rounded-full ${
                   crm.status === "synced" ? "bg-[#22a35a]" : crm.status === "failed" ? "bg-[var(--danger)]" : "bg-[#b9b3c9]"
@@ -235,8 +256,8 @@ export function AccountHero({
                 aria-hidden
               />
               <span className="leading-tight">
-                <span className="block text-[11.5px] font-bold uppercase tracking-[0.1em] text-[var(--plum)]">CRM sync</span>
-                <span className="block text-[14px] font-semibold text-[var(--foreground)]">
+                <span className="block text-[10.5px] font-bold uppercase tracking-[0.1em] text-[var(--plum)]">CRM sync</span>
+                <span className="block whitespace-nowrap text-[13.5px] font-semibold text-[var(--foreground)]">
                   {crmLabel} · {crmState}
                 </span>
               </span>

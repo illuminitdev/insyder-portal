@@ -14,6 +14,8 @@ import {
   tasks,
   users,
   crmMappings,
+  researchRuns,
+  playbookVersions,
 } from "../../db/schema/index.js";
 import { acceptanceStates } from "../../db/schema/workflow.js";
 import { accountResearchStates } from "../../db/schema/accounts.js";
@@ -51,6 +53,8 @@ export async function accountRoutes(app: FastifyInstance) {
           source: z.enum(["manual", "import", "crm_import", "discovery", "lookalike", "list"]).optional(),
           /** Archived accounts are hidden unless asked for: "only" lists just them */
           archived: z.enum(["exclude", "only"]).default("exclude"),
+          /** A playbook's template key, or "unassigned" for accounts without one */
+          playbookTemplateKey: z.string().optional(),
         })
         .parse(req.query);
       const where: SQL[] = [accountScope(m)];
@@ -59,6 +63,13 @@ export async function accountRoutes(app: FastifyInstance) {
       if (q.acceptanceState) where.push(eq(accounts.acceptanceState, q.acceptanceState));
       if (q.researchState) where.push(eq(accounts.researchState, q.researchState));
       if (q.ownerUserId) where.push(eq(accounts.ownerUserId, q.ownerUserId));
+      if (q.playbookTemplateKey) {
+        where.push(
+          q.playbookTemplateKey === "unassigned"
+            ? isNull(accounts.playbookTemplateKey)
+            : eq(accounts.playbookTemplateKey, q.playbookTemplateKey),
+        );
+      }
       const db = getDb();
       const rows = await db
         .select({
@@ -69,6 +80,31 @@ export async function accountRoutes(app: FastifyInstance) {
         .from(accounts)
         .where(and(...where))
         .orderBy(desc(accounts.updatedAt));
+
+      // Accounts without a playbook show the playbook of their latest research run
+      const missingPlaybookIds = rows.filter((r) => !r.playbookTemplateKey).map((r) => r.id);
+      if (missingPlaybookIds.length) {
+        const runRows = await db
+          .select({ accountId: researchRuns.accountId, templateKey: playbookVersions.templateKey })
+          .from(researchRuns)
+          .innerJoin(playbookVersions, eq(researchRuns.playbookVersionId, playbookVersions.id))
+          .where(
+            and(
+              eq(researchRuns.workspaceId, workspaceId),
+              inArray(researchRuns.accountId, missingPlaybookIds),
+              isNotNull(researchRuns.playbookVersionId),
+            ),
+          )
+          .orderBy(desc(researchRuns.createdAt));
+        const playbookByAccount = new Map<string, string>();
+        for (const rr of runRows) {
+          if (rr.accountId && !playbookByAccount.has(rr.accountId)) playbookByAccount.set(rr.accountId, rr.templateKey);
+        }
+        for (const r of rows) {
+          if (!r.playbookTemplateKey) r.playbookTemplateKey = playbookByAccount.get(r.id) ?? null;
+        }
+      }
+
       return { accounts: rows };
     },
   );
@@ -181,6 +217,8 @@ export async function accountRoutes(app: FastifyInstance) {
           name: z.string().trim().min(1).max(300),
           domain: z.string().max(300).optional(),
           country: z.string().max(60).optional(),
+          companySummary: z.string().trim().max(1000).optional(),
+          playbookTemplateKey: z.string().trim().max(100).optional(),
         })
         .parse(req.body);
       const domain = body.domain?.trim() ? normalizeDomain(body.domain) : null;
@@ -210,6 +248,8 @@ export async function accountRoutes(app: FastifyInstance) {
         name: body.name,
         domain,
         country,
+        companySummary: body.companySummary || null,
+        playbookTemplateKey: body.playbookTemplateKey || null,
         source: "manual",
         researchState: "unresearched",
         acceptanceState: "draft",
@@ -223,6 +263,45 @@ export async function accountRoutes(app: FastifyInstance) {
         entityId: id,
       });
       const [row] = await db.select().from(accounts).where(eq(accounts.id, id)).limit(1);
+      return { account: row };
+    },
+  );
+
+  /** Edit an account's company overview sentence or playbook */
+  app.patch(
+    "/v1/workspaces/:workspaceId/accounts/:accountId",
+    { preHandler: authenticateRequired },
+    async (req) => {
+      const { workspaceId, accountId } = req.params as { workspaceId: string; accountId: string };
+      const m = await loadMembership(req, workspaceId);
+      requireCap(m, "import");
+      await assertAccountReadable(m, accountId);
+      const body = z
+        .object({
+          companySummary: z.string().trim().max(1000).nullable().optional(),
+          playbookTemplateKey: z.string().trim().max(100).nullable().optional(),
+        })
+        .parse(req.body ?? {});
+      const db = getDb();
+      const updates: { companySummary?: string | null; playbookTemplateKey?: string | null; updatedAt: Date } = {
+        updatedAt: new Date(),
+      };
+      if (body.companySummary !== undefined) updates.companySummary = body.companySummary || null;
+      if (body.playbookTemplateKey !== undefined) updates.playbookTemplateKey = body.playbookTemplateKey || null;
+      const [row] = await db
+        .update(accounts)
+        .set(updates)
+        .where(and(eq(accounts.id, accountId), accountScope(m)))
+        .returning();
+      await writeAudit({
+        tenantId: m.tenantId,
+        workspaceId,
+        actorUserId: m.userId,
+        action: "account.updated",
+        entityType: "account",
+        entityId: accountId,
+        metadata: { fields: Object.keys(updates).filter((k) => k !== "updatedAt") },
+      });
       return { account: row };
     },
   );
