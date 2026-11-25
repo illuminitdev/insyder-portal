@@ -231,6 +231,7 @@ Each provider sits behind a small interface (`providers/*/types.ts`), so another
 | `FRONTEND_ORIGIN` | yes | The web app's address, e.g. `http://localhost:3000` |
 | `EXA_API_KEY` | for research | Exa search key |
 | `SECRETS_ENCRYPTION_KEY` | recommended | Key for encrypting CRM credentials |
+| `DEMO_INTAKE_KEY` | for demo requests | Shared secret the marketing site (Insyder repo) sends to `POST /v1/intake/demo-requests`. Empty turns intake off |
 | `PORT` | no | API port (default 4000) |
 | `NODE_ENV` | no | `production` turns on secure cookies |
 

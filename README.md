@@ -40,6 +40,8 @@ The seed creates your company (tenant), its first workspace and its first admin 
 
 Required backend env: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AUTH_SECRET` (16+ chars), `EXA_API_KEY`, `FRONTEND_ORIGIN`. Set `NODE_ENV=production` in production for secure cookies.
 
+Optional: `DEMO_INTAKE_KEY`, a shared secret that lets the marketing site (Insyder repo, its /api/demo-requests route) forward "Book a demo" form submissions to `POST /v1/intake/demo-requests`. Set the same value here and in the marketing site's Vercel project. The platform admin sees them under **Platform HQ → Demo requests**.
+
 ## Tests
 
 ```bash

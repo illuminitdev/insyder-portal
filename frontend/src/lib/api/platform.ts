@@ -184,3 +184,37 @@ export function rejectAccessRequest(id: string, reason: string) {
     body: JSON.stringify({ reason }),
   });
 }
+
+/* ---------------- Demo requests (marketing site "Book a demo") ---------------- */
+
+export type DemoRequestStatus = "new" | "contacted" | "closed";
+
+/** Window event fired after a status change, so the nav badge refreshes its "new" count. */
+export const DEMO_REQUESTS_CHANGED = "insyder:demo-requests-changed";
+
+export type DemoRequest = {
+  id: string;
+  name: string;
+  email: string;
+  company: string | null;
+  role: string | null;
+  website: string | null;
+  message: string | null;
+  status: DemoRequestStatus;
+  updatedByName: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export function listDemoRequests(status?: DemoRequestStatus) {
+  return api<{ counts: Record<DemoRequestStatus, number>; requests: DemoRequest[] }>(
+    `/v1/platform/demo-requests${status ? `?status=${status}` : ""}`,
+  );
+}
+
+export function setDemoRequestStatus(id: string, status: DemoRequestStatus) {
+  return api<{ ok: true }>(`/v1/platform/demo-requests/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}

@@ -23,6 +23,7 @@ import { contactRoutes } from "./contacts.js";
 import { integrationRoutes } from "./integrations.js";
 import { notificationRoutes } from "./notifications.js";
 import { playbookRoutes } from "./playbooks.js";
+import { demoRequestRoutes } from "./demoRequests.js";
 
 export async function v1Routes(app: FastifyInstance) {
   await authRoutes(app);
@@ -49,4 +50,5 @@ export async function v1Routes(app: FastifyInstance) {
   await integrationRoutes(app);
   await notificationRoutes(app);
   await playbookRoutes(app);
+  await demoRequestRoutes(app);
 }
