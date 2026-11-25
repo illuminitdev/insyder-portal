@@ -77,7 +77,7 @@ function SectionHeader({
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-tint)] text-[var(--brand)]">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-tint)] text-[var(--brand-text)]">
           <Icon size={20} strokeWidth={1.75} aria-hidden />
         </span>
         <div>
@@ -96,7 +96,7 @@ function SavedRow({ icon: Icon, label, value }: { icon: LucideIcon; label: strin
   return (
     <div className="grid grid-cols-[minmax(0,11rem)_minmax(0,1fr)] items-start gap-3 border-b border-[var(--line)] py-3.5">
       <dt className="flex items-center gap-2.5 text-sm text-[var(--muted)]">
-        <Icon size={16} strokeWidth={1.75} className="shrink-0 text-[var(--brand)]" aria-hidden />
+        <Icon size={16} strokeWidth={1.75} className="shrink-0 text-[var(--brand-text)]" aria-hidden />
         {label}
       </dt>
       <dd
@@ -572,7 +572,7 @@ function OfferSettings({ workspaceId }: { workspaceId: string }) {
               <Link
                 href="/researcher/search"
                 autoFocus
-                className="inline-flex items-center justify-center rounded-[7px] border border-transparent bg-[var(--brand)] px-3.5 py-2 text-sm font-semibold text-white hover:bg-[var(--brand-hover)]"
+                className="inline-flex items-center justify-center rounded-[7px] border border-transparent bg-[var(--brand)] px-3.5 py-2 text-sm font-semibold text-[var(--on-gradient)] hover:bg-[var(--brand-hover)]"
               >
                 Go to Discover →
               </Link>

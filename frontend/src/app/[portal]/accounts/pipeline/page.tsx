@@ -124,7 +124,7 @@ function Pipeline({ workspaceId }: { workspaceId: string }) {
                   onClick={() => setView(key)}
                   className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
                     active
-                      ? "border-[var(--navy)] bg-[var(--navy)] text-white"
+                      ? "border-[var(--navy)] bg-[var(--navy)] text-[var(--on-brand)]"
                       : "border-[var(--line)] bg-white text-[var(--foreground)] hover:bg-[var(--chip-bg)]"
                   }`}
                 >

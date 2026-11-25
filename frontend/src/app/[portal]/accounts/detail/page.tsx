@@ -887,7 +887,7 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
                         ? "bg-[var(--badge-green-bg)] text-[var(--badge-green-fg)]"
                         : p.locked
                           ? "border border-[var(--line)] text-[var(--muted)]"
-                          : "bg-[var(--brand)] text-white"
+                          : "bg-[var(--brand)] text-[var(--on-brand)]"
                     }`}
                     aria-hidden
                   >
@@ -1072,7 +1072,7 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
         ? {
             label: "Find similar companies",
             disabledReason: account.domain ? undefined : "Needs the company's website (domain)",
-            icon: <Building2 size={16} className="text-[#4f46c8]" />,
+            icon: <Building2 size={16} className="text-[var(--link)]" />,
             onClick: () => {
               void findSimilar();
               selectStep("research");
@@ -1157,7 +1157,7 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
           onClick={secondary.onClick}
           className="inline-flex items-center gap-2.5 rounded-[14px] bg-white px-5 py-3 text-[15.5px] font-medium text-[var(--foreground)] shadow-[0_4px_14px_rgba(13,27,42,0.1)] transition hover:text-[var(--brand-active)] disabled:opacity-50"
         >
-          <secondary.Icon size={19} className="text-[#4f46c8]" aria-hidden />
+          <secondary.Icon size={19} className="text-[var(--link)]" aria-hidden />
           {secondary.label}
         </button>
       ) : null}
@@ -1165,7 +1165,7 @@ function AccountBrief({ workspaceId, accountId }: { workspaceId: string; account
         type="button"
         disabled={primary.disabled}
         onClick={primary.onClick}
-        className="inline-flex items-center gap-2.5 rounded-[14px] bg-gradient-to-r from-[var(--brand-active)] to-[var(--brand)] px-5 py-3 text-[15.5px] font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+        className="inline-flex items-center gap-2.5 rounded-[14px] bg-gradient-to-r from-[var(--brand-active)] to-[var(--brand)] px-5 py-3 text-[15.5px] font-semibold text-[var(--on-gradient)] transition hover:brightness-110 disabled:opacity-60"
       >
         <primary.Icon size={19} aria-hidden />
         {primary.label}

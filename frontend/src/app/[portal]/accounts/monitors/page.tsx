@@ -534,7 +534,7 @@ function MonitorsView({ workspaceId }: { workspaceId: string }) {
           {filteredMonitors.length === 0 ? (
             <Card className="py-10 text-center text-sm text-[var(--muted)]">
               No monitor matches &ldquo;{monitorSearch.trim()}&rdquo;.{" "}
-              <button type="button" onClick={() => setMonitorSearch("")} className="font-semibold text-[var(--brand)] hover:underline">
+              <button type="button" onClick={() => setMonitorSearch("")} className="font-semibold text-[var(--brand-text)] hover:underline">
                 Clear search
               </button>
             </Card>

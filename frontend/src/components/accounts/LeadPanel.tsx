@@ -54,7 +54,7 @@ export function LeadPanel({
       >
         <div className="flex items-start justify-between gap-3 border-b border-[var(--line)] px-6 py-5">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--brand)]">Lead</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-text)]">Lead</p>
             <h2 className="mt-1 text-[20px] leading-snug">{account?.name ?? "Loading…"}</h2>
             {account ? (
               <p className="mt-1 text-sm text-[var(--muted)]">

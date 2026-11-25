@@ -7,6 +7,7 @@ import { Check, ChevronRight, ChevronsUpDown, CircleHelp, LogOut, Menu, UserRoun
 import { logout, type WorkspaceMembership } from "../../lib/auth/session";
 import { ROLE_LABELS } from "../../lib/auth/capabilities";
 import { useWorkspace } from "../../hooks/useWorkspace";
+import { useWorkspaceBranding } from "@/lib/branding";
 import { SubNav } from "../ui/SubNav";
 import { AttentionBell } from "./AttentionBell";
 import { CrmStatusChip } from "./CrmStatusChip";
@@ -60,6 +61,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { can, role, user, workspaceName, workspaces, workspaceId, selectWorkspace } = useWorkspace();
+  // The workspace's white label colours, if its tenant admin set any
+  useWorkspaceBranding(workspaceId);
   // Each role has its own portal and menu; links stay inside it
   const portal = portalForRole(role) ?? PORTALS.analyst;
   const sections = visibleSections(portal, can);
@@ -128,11 +131,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <InsyderMark size={size === "lg" ? 26 : 18} />
       </span>
       <span className="leading-none">
-        <span className={`block font-[family-name:var(--font-heading)] font-bold lowercase tracking-[-0.045em] ${size === "lg" ? "text-[22px] text-white" : "text-[17px] text-[var(--foreground)]"}`}>
+        <span className={`block font-[family-name:var(--font-heading)] font-bold lowercase tracking-[-0.045em] ${size === "lg" ? "text-[22px] text-[var(--sidebar-strong)]" : "text-[17px] text-[var(--foreground)]"}`}>
           Insyder
         </span>
         {size === "lg" ? (
-          <span className="mt-1 block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#7FD3CB]">
+          <span className="mt-1 block text-[10.5px] font-bold uppercase tracking-[0.14em] text-[var(--sidebar-accent)]">
             Intelligence HQ
           </span>
         ) : null}
@@ -153,7 +156,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar: slide-over drawer on mobile/tablet, fixed on lg+ */}
       <aside
-        className={`app-sidebar fixed inset-y-0 left-0 z-50 flex w-[var(--sidebar-width)] flex-col border-r border-white/[0.06] transition-transform duration-200 ease-in-out lg:z-30 lg:translate-x-0 print:hidden ${
+        className={`app-sidebar fixed inset-y-0 left-0 z-50 flex w-[var(--sidebar-width)] flex-col border-r border-[var(--sidebar-border)] transition-transform duration-200 ease-in-out lg:z-30 lg:translate-x-0 print:hidden ${
           mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
@@ -164,7 +167,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
           <button
             type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-[#8FA2B5] hover:bg-white/10 hover:text-white lg:hidden"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--sidebar-muted)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-strong)] lg:hidden"
             onClick={() => setMobileMenuOpen(false)}
             aria-label="Close menu"
           >
@@ -196,8 +199,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 aria-current={active ? "page" : undefined}
                 className={`group flex h-12 items-center gap-4 rounded-[12px] px-3 text-[15px] font-medium transition-all duration-200 active:scale-[0.98] ${
                   active
-                    ? "bg-[#223D50] font-semibold text-white"
-                    : "text-[#C3CED9] hover:bg-white/[0.06] hover:text-white"
+                    ? "bg-[var(--sidebar-active)] font-semibold text-[var(--sidebar-active-text)]"
+                    : "text-[var(--sidebar-text)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-strong)]"
                 }`}
               >
                 <Icon
@@ -207,7 +210,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   className={`shrink-0 transition-transform duration-300 ease-out will-change-transform group-active:scale-85 group-active:duration-75 ${getNavIconAnimation(
                     item.key
                   )} ${
-                    active ? "text-[#7FD3CB]" : "text-[#8FA2B5] group-hover:text-white"
+                    active ? "text-[var(--sidebar-active-icon)]" : "text-[var(--sidebar-muted)] group-hover:text-[var(--sidebar-strong)]"
                   }`}
                 />
                 <span className="transition-transform duration-200 group-hover:translate-x-0.5">{item.label}</span>
@@ -217,20 +220,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Signed-in member: name, role, help and log out */}
-        <div className="border-t border-white/10 p-4">
-          <div className="flex items-center gap-3 rounded-[14px] bg-white/[0.06] px-3 py-2.5">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#0E6B67] to-[#14857F] text-[13px] font-semibold text-white">
+        <div className="border-t border-[var(--sidebar-border)] p-4">
+          <div className="flex items-center gap-3 rounded-[14px] bg-[var(--sidebar-card)] px-3 py-2.5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand-active)] to-[var(--avatar-to)] text-[13px] font-semibold text-[var(--on-accent)]">
               {initials === "?" ? <UserRound size={18} aria-hidden /> : initials}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[14px] font-semibold text-white">{user?.name ?? "Signed in"}</p>
-              <p className="truncate text-[12px] text-[#8FA2B5]">{ROLE_LABELS[role ?? ""] ?? role}</p>
+              <p className="truncate text-[14px] font-semibold text-[var(--sidebar-strong)]">{user?.name ?? "Signed in"}</p>
+              <p className="truncate text-[12px] text-[var(--sidebar-muted)]">{ROLE_LABELS[role ?? ""] ?? role}</p>
             </div>
             <Link
               href={`${portal.prefix}/settings/how-it-works`}
               aria-label="Help: how it works"
               onClick={() => setMobileMenuOpen(false)}
-              className="group/help relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#C3CED9] transition-all duration-200 hover:bg-white/10 hover:text-white active:scale-95"
+              className="group/help relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--sidebar-text)] transition-all duration-200 hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-strong)] active:scale-95"
             >
               <CircleHelp
                 size={17}
@@ -241,7 +244,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {/* Small "Help" tooltip above the icon, on hover and keyboard focus */}
               <span
                 role="tooltip"
-                className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-[var(--navy)] px-2 py-1 text-[11.5px] font-medium text-white opacity-0 shadow-md transition-opacity duration-150 group-hover/help:opacity-100 group-focus-visible/help:opacity-100"
+                className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-[var(--navy)] px-2 py-1 text-[11.5px] font-medium text-[var(--on-brand)] opacity-0 shadow-md transition-opacity duration-150 group-hover/help:opacity-100 group-focus-visible/help:opacity-100"
               >
                 Help
                 <span
@@ -253,7 +256,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <button
             type="button"
-            className="group mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-[12px] border border-white/10 bg-white/[0.04] text-[13.5px] font-medium text-[#C3CED9] transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white active:scale-[0.98]"
+            className="group mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--sidebar-border)] bg-[var(--sidebar-card)] text-[13.5px] font-medium text-[var(--sidebar-text)] transition-all duration-200 hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-strong)] active:scale-[0.98]"
             onClick={() => {
               void logout().catch(() => undefined);
               router.replace("/login");
@@ -385,7 +388,7 @@ export function AccountMenu({
         aria-expanded={open}
         aria-label={`Account menu for ${name}`}
         onClick={() => setOpen((o) => !o)}
-        className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand)] to-[var(--brand-active)] text-white transition hover:brightness-110"
+        className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[var(--brand)] to-[var(--brand-active)] text-[var(--on-gradient)] transition hover:brightness-110"
       >
         {initials === "?" ? <UserRound size={19} aria-hidden /> : <span className="text-[13px] font-semibold">{initials}</span>}
       </button>
@@ -463,15 +466,15 @@ function WorkspaceSwitcher({
 
   const card = (
     <>
-      <span className="h-2 w-2 shrink-0 rounded-full bg-[#7FD3CB]" aria-hidden />
+      <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--sidebar-accent)]" aria-hidden />
       <span className="min-w-0 flex-1 text-left">
-        <span className="block text-[10.5px] font-bold uppercase tracking-[0.1em] text-[#8FA2B5]">Workspace</span>
-        <span className="block truncate text-[15px] font-semibold leading-tight text-white">{currentName}</span>
+        <span className="block text-[10.5px] font-bold uppercase tracking-[0.1em] text-[var(--sidebar-muted)]">Workspace</span>
+        <span className="block truncate text-[15px] font-semibold leading-tight text-[var(--sidebar-strong)]">{currentName}</span>
       </span>
     </>
   );
   const cardClass =
-    "flex w-full items-center gap-3 rounded-[14px] border border-white/10 bg-white/[0.06] px-4 py-3";
+    "flex w-full items-center gap-3 rounded-[14px] border border-[var(--sidebar-border)] bg-[var(--sidebar-card)] px-4 py-3";
 
   if (!canSwitch) {
     return (
@@ -489,10 +492,10 @@ function WorkspaceSwitcher({
         aria-expanded={open}
         aria-label={`Workspace: ${currentName}. Switch workspace`}
         onClick={() => setOpen((o) => !o)}
-        className={`${cardClass} transition hover:bg-white/10 ${open ? "ring-2 ring-[#7FD3CB]/40" : ""}`}
+        className={`${cardClass} transition hover:bg-[var(--sidebar-hover)] ${open ? "ring-2 ring-[var(--sidebar-accent)]/40" : ""}`}
       >
         {card}
-        <ChevronsUpDown size={16} className="shrink-0 text-[#8FA2B5]" aria-hidden />
+        <ChevronsUpDown size={16} className="shrink-0 text-[var(--sidebar-muted)]" aria-hidden />
       </button>
       {open ? (
         <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-[16px] border border-[var(--card-line)] bg-white p-2 shadow-[0_18px_40px_rgba(13,27,42,0.14)]">
@@ -525,7 +528,7 @@ function WorkspaceSwitcher({
                   <span
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[12.5px] font-bold ${
                       selected
-                        ? "bg-gradient-to-br from-[var(--brand)] to-[var(--brand-active)] text-white"
+                        ? "bg-gradient-to-br from-[var(--brand)] to-[var(--brand-active)] text-[var(--on-gradient)]"
                         : "bg-[var(--lilac)] text-[var(--plum)]"
                     }`}
                   >

@@ -15,6 +15,7 @@ import { writeAudit } from "../../services/audit.js";
 import { ensureEntitlements, updateEntitlements } from "../../services/entitlements.js";
 import { parseBrief } from "../../services/briefParser.js";
 import { parseGates } from "../../services/acceptance.js";
+import { parseBranding, validateBranding } from "../../services/branding.js";
 import { FIELD_KEYS } from "../../services/qualification.js";
 import { normalizeCountry, normalizeWebsite } from "../../utils/normalize.js";
 import { latestPlaybook, listPlaybooks } from "../../services/playbooks.js";
@@ -344,6 +345,58 @@ export async function settingsRoutes(app: FastifyInstance) {
         .where(eq(offers.workspaceId, workspaceId));
 
       return { ok: true, eventWindowDays: body.eventWindowDays };
+    },
+  );
+
+  /** White label colours of this workspace (every member gets them, so the app is drawn in them) */
+  app.get(
+    "/v1/workspaces/:workspaceId/settings/branding",
+    { preHandler: authenticateRequired },
+    async (req) => {
+      const { workspaceId } = req.params as { workspaceId: string };
+      const m = await loadMembership(req, workspaceId);
+      const [ws] = await getDb()
+        .select({ brandingJson: workspaces.brandingJson })
+        .from(workspaces)
+        .where(eq(workspaces.id, workspaceId))
+        .limit(1);
+      return { branding: parseBranding(ws?.brandingJson), canEdit: hasCapability(m.role, "manage_settings") };
+    },
+  );
+
+  /** Set (or with null, reset to Insyder colours) the workspace's colours. Tenant admin only. */
+  app.put(
+    "/v1/workspaces/:workspaceId/settings/branding",
+    { preHandler: authenticateRequired },
+    async (req) => {
+      const { workspaceId } = req.params as { workspaceId: string };
+      const m = await loadMembership(req, workspaceId);
+      requireCap(m, "manage_settings");
+      const body = z
+        .object({
+          branding: z
+            .object({ primary: z.string().max(20), accent: z.string().max(20), sidebar: z.string().max(20) })
+            .nullable(),
+        })
+        .parse(req.body);
+      let branding = null;
+      if (body.branding) {
+        const r = validateBranding(body.branding);
+        if ("errors" in r) throw validationError(r.errors.join(" "));
+        branding = r.branding;
+      }
+      await getDb()
+        .update(workspaces)
+        .set({ brandingJson: branding ? JSON.stringify(branding) : null })
+        .where(eq(workspaces.id, workspaceId));
+      await writeAudit({
+        tenantId: m.tenantId,
+        workspaceId,
+        actorUserId: m.userId,
+        action: branding ? "settings.branding.updated" : "settings.branding.reset",
+        metadata: branding ?? {},
+      });
+      return { branding, canEdit: true };
     },
   );
 

@@ -357,13 +357,13 @@ function WorkGuide({ workspaceId }: { workspaceId: string }) {
                   {c.email || c.phone ? (
                     <span className="block text-xs">
                       {c.email ? (
-                        <a href={`mailto:${c.email}`} className="hover:text-[var(--brand)] hover:underline" title="Open in your mail app">
+                        <a href={`mailto:${c.email}`} className="hover:text-[var(--brand-text)] hover:underline" title="Open in your mail app">
                           {c.email}
                         </a>
                       ) : null}
                       {c.email && c.phone ? " · " : null}
                       {c.phone ? (
-                        <a href={`tel:${c.phone.replace(/[^\d+]/g, "")}`} className="hover:text-[var(--brand)] hover:underline">
+                        <a href={`tel:${c.phone.replace(/[^\d+]/g, "")}`} className="hover:text-[var(--brand-text)] hover:underline">
                           {c.phone}
                         </a>
                       ) : null}
@@ -465,7 +465,7 @@ function WorkGuide({ workspaceId }: { workspaceId: string }) {
                 aria-checked={mode === m}
                 onClick={() => setMode(m)}
                 className={`rounded-full border px-4 py-1.5 text-sm font-medium ${
-                  mode === m ? "border-[var(--navy)] bg-[var(--navy)] text-white" : "border-[var(--line)] bg-white hover:bg-[var(--chip-bg)]"
+                  mode === m ? "border-[var(--navy)] bg-[var(--navy)] text-[var(--on-brand)]" : "border-[var(--line)] bg-white hover:bg-[var(--chip-bg)]"
                 }`}
               >
                 {m === "complete" ? "I did it" : "Cancel this task"}

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { PortalLink as Link } from "@/components/layout/PortalLink";
 import { canQueueResearch } from "@/components/accounts/AccountTable";
-import { AccountIntelligenceFeed, isTier1 } from "@/components/accounts/AccountIntelligenceFeed";
+import { AccountIntelligenceFeed } from "@/components/accounts/AccountIntelligenceFeed";
 import { ImportCsvDialog } from "@/components/accounts/ImportCsvDialog";
 import { ImportCrmDialog } from "@/components/accounts/ImportCrmDialog";
 import { getCrmImportAvailability, startBatchResearch, type CrmImportAvailability } from "@/lib/api/crmImport";
@@ -53,7 +53,6 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
   const [monitorSuccessNote, setMonitorSuccessNote] = useState<string | null>(null);
 
   // Design View State
-  const [tierFilter, setTierFilter] = useState<"all" | "tier1" | "tier2">("all");
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [importMenuOpen, setImportMenuOpen] = useState(false);
 
@@ -239,13 +238,6 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
     </div>
   );
 
-  // Filter accounts by tier pills if selected
-  const displayedAccounts = (accounts ?? []).filter((a) => {
-    if (tierFilter === "tier1") return isTier1(a);
-    if (tierFilter === "tier2") return !isTier1(a);
-    return true;
-  });
-
   return (
     <div className="space-y-6 min-w-0 w-full max-w-full">
       {/* Page header */}
@@ -260,8 +252,9 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
           </p>
         </div>
 
-        <div className="flex shrink-0 flex-col items-start gap-3 xl:items-end">
-          <div className="flex flex-wrap items-center gap-3">
+        {/* Import and Add sit side by side */}
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
+          <div className="flex items-center">
             {can("import") || can("export") ? (
               <div className="relative">
                 <button
@@ -324,31 +317,6 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
                 ) : null}
               </div>
             ) : null}
-
-            {/* Tier filter */}
-            <div role="group" aria-label="Tier" className="flex items-center rounded-[14px] bg-[var(--lilac)] p-1">
-              {(
-                [
-                  ["all", "All tiers"],
-                  ["tier1", "Tier 1 only"],
-                  ["tier2", "Tier 2"],
-                ] as const
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={tierFilter === key}
-                  onClick={() => setTierFilter(key)}
-                  className={`rounded-[10px] px-3.5 py-1.5 text-[15px] font-medium transition ${
-                    tierFilter === key
-                      ? "bg-[var(--brand)] font-semibold text-white"
-                      : "text-[var(--plum)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -356,9 +324,9 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
               <button
                 type="button"
                 onClick={() => setAddModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--brand)] to-[#0E6B67] px-4 py-2 text-[14px] font-semibold text-white transition hover:brightness-110 active:scale-[0.99]"
+                className="inline-flex items-center gap-2.5 rounded-[14px] bg-gradient-to-r from-[var(--brand)] to-[var(--brand-active)] px-4 py-2.5 text-[15.5px] font-semibold text-[var(--on-gradient)] transition hover:brightness-110 active:scale-[0.99]"
               >
-                <CirclePlus size={16} aria-hidden />
+                <CirclePlus size={18} aria-hidden />
                 Add target account
               </button>
             ) : null}
@@ -409,7 +377,7 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
       {/* Main View: Account Intelligence Feed */}
       {accounts !== null ? (
         <AccountIntelligenceFeed
-          accounts={displayedAccounts}
+          accounts={accounts}
           selection={canResearch ? { selected, onChange: setSelected } : undefined}
           pipelineRows={pipelineRows}
           changeEvents={changeEvents}
@@ -426,14 +394,14 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
       {canResearch && selected.length ? (
         <div className="sticky bottom-4 z-30 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-2xl border border-brand-200 bg-white px-4 py-2.5 shadow-[0_8px_30px_rgba(15,23,42,0.18)]">
           <p className="text-xs sm:text-sm text-slate-800">
-            <strong className="text-[var(--brand)] font-bold text-sm sm:text-base">{selected.length}</strong> {selected.length === 1 ? "account" : "accounts"} selected
+            <strong className="text-[var(--brand-text)] font-bold text-sm sm:text-base">{selected.length}</strong> {selected.length === 1 ? "account" : "accounts"} selected
             {archivedView ? null : (
               <>
                 {" · "}
                 <span className="font-semibold text-slate-700">{unitsNeeded} research units</span>
                 {unitsLeft != null ? <span className="text-slate-400"> · {unitsLeft} units left this month</span> : null}
-                {tooMany ? <span className="block text-xs text-[var(--brand)] font-medium">At most {BATCH_MAX} at a time.</span> : null}
-                {notEnough && !tooMany ? <span className="block text-xs text-[var(--brand)] font-medium">Not enough units left. Pick fewer accounts.</span> : null}
+                {tooMany ? <span className="block text-xs text-[var(--brand-text)] font-medium">At most {BATCH_MAX} at a time.</span> : null}
+                {notEnough && !tooMany ? <span className="block text-xs text-[var(--brand-text)] font-medium">Not enough units left. Pick fewer accounts.</span> : null}
               </>
             )}
           </p>

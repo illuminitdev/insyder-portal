@@ -158,7 +158,7 @@ export function CompanyProfileCard({
     <Card className={firstTime && !profile ? "!border-[var(--brand)] shadow-[0_0_0_1px_var(--brand)]" : undefined}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-tint)] text-[var(--brand)]">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-tint)] text-[var(--brand-text)]">
             <Globe size={20} strokeWidth={1.75} aria-hidden />
           </span>
           <div>
@@ -247,7 +247,7 @@ export function CompanyProfileCard({
 
       {running ? (
         <div className="mt-5 flex items-center gap-3 rounded-[10px] border border-[var(--line)] bg-[var(--surface-sunken)] px-4 py-3 text-sm" aria-live="polite">
-          <Loader2 size={18} className="shrink-0 animate-spin text-[var(--brand)]" aria-hidden />
+          <Loader2 size={18} className="shrink-0 animate-spin text-[var(--brand-text)]" aria-hidden />
           <span>
             Reading <span className="font-semibold">{state.website}</span> and building your profile… This usually takes 1 to 3
             minutes.
@@ -266,7 +266,7 @@ export function CompanyProfileCard({
           {/* What we learned */}
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Building2 size={16} className="text-[var(--brand)]" aria-hidden />
+              <Building2 size={16} className="text-[var(--brand-text)]" aria-hidden />
               <span className="font-semibold">{profile.companyName ?? "Your company"}</span>
               {state.website ? (
                 <a

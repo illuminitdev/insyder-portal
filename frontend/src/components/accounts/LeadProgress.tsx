@@ -220,7 +220,7 @@ function ProgressPopover({
                               : locked
                                 ? "border border-[var(--line)] text-[var(--muted)]"
                                 : isCurrent || isSelected
-                                  ? "bg-[var(--brand)] text-white"
+                                  ? "bg-[var(--brand)] text-[var(--on-brand)]"
                                   : "border border-[var(--input-border)] text-[var(--foreground)]"
                           }`}
                         >
@@ -230,7 +230,7 @@ function ProgressPopover({
                           <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--foreground)]">
                             <span className="truncate">{s.title}</span>
                             {isCurrent ? (
-                              <span className="shrink-0 rounded bg-[var(--brand)] px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-white">Next</span>
+                              <span className="shrink-0 rounded bg-[var(--brand)] px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-[var(--on-brand)]">Next</span>
                             ) : null}
                             {s.optional ? <span className="shrink-0 text-[10.5px] font-normal text-[var(--muted)]">optional</span> : null}
                           </span>

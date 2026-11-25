@@ -396,7 +396,7 @@ export function ProcessGuide({
               <span
                 className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
                   s.isCurrent
-                    ? "bg-[var(--brand)] text-white shadow-2xs"
+                    ? "bg-[var(--brand)] text-[var(--on-brand)] shadow-2xs"
                     : "bg-[var(--chip-bg)] text-[var(--foreground)]"
                 }`}
               >

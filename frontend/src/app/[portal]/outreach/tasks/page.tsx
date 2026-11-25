@@ -204,7 +204,7 @@ function SdrQueue({ workspaceId }: { workspaceId: string }) {
             label="Tasks shown"
             value={stats.shown}
             Icon={ListTodo}
-            tone="bg-[var(--chip-bg)] text-[var(--navy)]"
+            tone="bg-[var(--chip-bg)] text-[var(--brand-text)]"
           />
           <Stat
             label="Overdue"

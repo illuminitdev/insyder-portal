@@ -95,7 +95,7 @@ export function Stepper({
                   <span
                     className={`flex h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0 items-center justify-center rounded-full text-[10px] sm:text-[11px] font-bold ${
                       isCurrent
-                        ? "bg-[var(--brand)] text-white"
+                        ? "bg-[var(--brand)] text-[var(--on-brand)]"
                         : isDone
                           ? "bg-[var(--badge-green-bg)] text-[var(--badge-green-fg)]"
                           : "bg-[var(--chip-bg)] text-[var(--muted)] font-medium"

@@ -42,11 +42,11 @@ function Check({ ok, required, children }: { ok: boolean; required?: boolean; ch
       {ok ? (
         <CircleCheck size={17} className="mt-0.5 shrink-0 text-[var(--badge-green-fg)]" aria-hidden />
       ) : missing ? (
-        <CircleAlert size={17} className="mt-0.5 shrink-0 text-[var(--brand)]" aria-hidden />
+        <CircleAlert size={17} className="mt-0.5 shrink-0 text-[var(--brand-text)]" aria-hidden />
       ) : (
         <CircleDashed size={17} className="mt-0.5 shrink-0 text-[var(--muted)]" aria-hidden />
       )}
-      <span className={ok ? "" : missing ? "font-semibold text-[var(--brand)]" : "text-[var(--muted)]"}>
+      <span className={ok ? "" : missing ? "font-semibold text-[var(--brand-text)]" : "text-[var(--muted)]"}>
         {children}
         {missing ? " — required" : ""}
       </span>
@@ -604,7 +604,7 @@ function QualifyGuide({ workspaceId }: { workspaceId: string }) {
                 {!editable ? (
                   <span className="text-sm text-[var(--muted)]">This lead is {humanize(brief.account.acceptanceState).toLowerCase()}.</span>
                 ) : reviewed === 0 ? (
-                  <span className="text-sm font-medium text-[var(--brand)]">Review at least one source first</span>
+                  <span className="text-sm font-medium text-[var(--brand-text)]">Review at least one source first</span>
                 ) : !note.trim() ? (
                   <span className="text-sm text-[var(--muted)]">Write why it&apos;s worth sales time</span>
                 ) : !reviewerId ? (
