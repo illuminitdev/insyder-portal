@@ -7,7 +7,7 @@ import { ErrorState } from "@/components/common/ErrorState";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Field, FormError, inputClass } from "@/components/ui/Field";
-import { Building2, CircleCheck, Gauge, Shapes, Plus, Search, Users, X, type LucideIcon } from "lucide-react";
+import { Building2, CircleCheck, PoundSterling, Gauge, Shapes, Plus, Search, Users, X, type LucideIcon } from "lucide-react";
 import { CompanyCards } from "@/components/platform/CompanyCards";
 import { createCompany, getPlatformOverview, type PlatformCompany } from "@/lib/api/platform";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -181,8 +181,14 @@ export default function PlatformCompaniesPage() {
         </form>
       </Modal>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <SummaryTile Icon={Building2} label="Companies" value={companies.length} />
+        <SummaryTile
+          Icon={PoundSterling}
+          label="Monthly revenue (£)"
+          value={companies.filter((c) => c.billingStatus === "active").reduce((a, c) => a + c.price, 0)}
+          suffix={`${companies.filter((c) => c.billingStatus !== "active").length} unpaid`}
+        />
         <SummaryTile Icon={Shapes} label="Workspaces" value={totals.workspaces} />
         <SummaryTile Icon={Users} label="Members" value={totals.members} />
         <SummaryTile

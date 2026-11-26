@@ -24,9 +24,11 @@ import { integrationRoutes } from "./integrations.js";
 import { notificationRoutes } from "./notifications.js";
 import { playbookRoutes } from "./playbooks.js";
 import { demoRequestRoutes } from "./demoRequests.js";
+import { billingRoutes } from "./billing.js";
 
 export async function v1Routes(app: FastifyInstance) {
   await authRoutes(app);
+  await billingRoutes(app);
   await workspaceRoutes(app);
   await membershipRoutes(app);
   await companyWorkspaceRoutes(app);

@@ -29,6 +29,8 @@ import { formatDate } from "@/lib/utils/dates";
 import { countryName } from "@/lib/countries";
 import { MonitorCard } from "@/components/monitors/MonitorCard";
 import { MonitorAccountsModal } from "@/components/monitors/MonitorAccountsModal";
+import { usePlan } from "@/hooks/usePlan";
+import { CADENCE_TEXT } from "@/lib/api/billing";
 
 const SIGNAL_PATTERNS: Array<{ key: string; label: string; regex: RegExp }> = [
   {
@@ -224,7 +226,12 @@ function MonitorsView({ workspaceId }: { workspaceId: string }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>("");
+  const { cadenceOptions, defaultCadence } = usePlan(workspaceId);
   const [selectedCadence, setSelectedCadence] = useState<number>(168);
+  useEffect(() => {
+    if (!cadenceOptions.find((c) => c.hours === selectedCadence)?.allowed) setSelectedCadence(defaultCadence);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultCadence]);
   const [modalError, setModalError] = useState<string | null>(null);
 
   // Filters for Detected Signals feed: signal type, monitor, account target status, and search query
@@ -551,6 +558,7 @@ function MonitorsView({ workspaceId }: { workspaceId: string }) {
               onToggle={(status) => void handleToggleStatus(m.id, status)}
               onCheck={() => void handleCheckNow(m.id)}
               onRemove={() => void handleRemove(m.id)}
+              cadenceOptions={cadenceOptions}
             />
           ))}
         </div>
@@ -958,9 +966,12 @@ function MonitorsView({ workspaceId }: { workspaceId: string }) {
               value={selectedCadence}
               onChange={(e) => setSelectedCadence(Number(e.target.value))}
             >
-              <option value={24}>Daily (every 24 hours)</option>
-              <option value={168}>Weekly (every 7 days - recommended)</option>
-              <option value={720}>Monthly (every 30 days)</option>
+              {cadenceOptions.map((c) => (
+                <option key={c.hours} value={c.hours} disabled={!c.allowed}>
+                  {CADENCE_TEXT[c.hours] ?? c.label}
+                  {c.hint ? ` (${c.hint})` : ""}
+                </option>
+              ))}
             </select>
           </Field>
 

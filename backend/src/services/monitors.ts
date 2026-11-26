@@ -21,6 +21,7 @@ import { companyDomain, normalizeDomain } from "../utils/normalize.js";
 import { redactString } from "../utils/redact.js";
 import { getResearchProvider, isResearchConfigured } from "../providers/research/index.js";
 import { latestPlaybook } from "./playbooks.js";
+import { assertCadenceAllowed, defaultCadence } from "./plans.js";
 import { reconcileUsage, reserveResearchBudget, refundResearchBudget } from "./budget.js";
 
 const PLAYBOOK_DISPLAY_NAMES: Record<string, string> = {
@@ -59,6 +60,9 @@ export async function createMonitorFromPlaybook(
   const db = getDb();
   const [ws] = await db.select().from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1);
   if (!ws) throw notFound("Workspace not found");
+  // Plan decides which cadences are available (Starter: weekly only, etc.)
+  const cadence = cadenceHours ?? (await defaultCadence(ws.tenantId));
+  await assertCadenceAllowed(ws.tenantId, cadence);
 
   // Read workspace offer configuration
   const [offer] = await db
@@ -108,7 +112,7 @@ export async function createMonitorFromPlaybook(
       name: playbookName,
       playbookTemplateKey: templateKey,
       recipeJson: JSON.stringify(recipe),
-      cadenceHours: cadenceHours ?? 168, // Default: Weekly
+      cadenceHours: cadence,
       status: "active",
       // Monitors always run live research; the column is kept only for old rows
       isSimulation: false,
@@ -135,6 +139,8 @@ export async function createMonitorFromAccounts(
   const db = getDb();
   const [ws] = await db.select().from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1);
   if (!ws) throw notFound("Workspace not found");
+  const cadence = input.cadenceHours ?? (await defaultCadence(ws.tenantId));
+  await assertCadenceAllowed(ws.tenantId, cadence);
 
   if (!input.accountIds || input.accountIds.length === 0) {
     throw validationError("At least one account ID is required");
@@ -235,7 +241,7 @@ export async function createMonitorFromAccounts(
       name: monitorName,
       playbookTemplateKey: templateKey,
       recipeJson: JSON.stringify(recipe),
-      cadenceHours: input.cadenceHours ?? 168,
+      cadenceHours: cadence,
       status: "active",
       isSimulation: false,
       lastSuccessAt: null,
@@ -268,6 +274,7 @@ export async function updateMonitor(
 
   if (patch.cadenceHours !== undefined) {
     if (patch.cadenceHours <= 0) throw validationError("Cadence must be greater than 0");
+    if (patch.cadenceHours !== existing.cadenceHours) await assertCadenceAllowed(existing.tenantId, patch.cadenceHours);
     values.cadenceHours = patch.cadenceHours;
   }
   if (patch.status !== undefined) {

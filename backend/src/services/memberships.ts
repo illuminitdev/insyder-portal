@@ -12,6 +12,7 @@ import { conflict, forbidden, notFound, validationError } from "../utils/errors.
 import { newId } from "../utils/ids.js";
 import { hashPassword } from "../auth/password.js";
 import { writeAudit } from "./audit.js";
+import { assertCanAddUser } from "./plans.js";
 import { forgetMemberships } from "../middleware/requireMembership.js";
 import { forgetUserSessions } from "../auth/session.js";
 
@@ -54,6 +55,8 @@ export async function grantMembership(input: {
   if (!ws) throw notFound("Workspace not found");
 
   const email = input.email.trim().toLowerCase();
+  // Plan limit: checked before anything is created, so a refused add leaves no orphan account
+  await assertCanAddUser(input.tenantId, email);
   let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
   // An existing account keeps its own password; only new people get the admin's one
   const existingAccount = Boolean(user);

@@ -1,18 +1,9 @@
 import type { FastifyInstance } from "fastify";
-import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { getEnv } from "../../config/env.js";
 import { requirePlatformAdmin } from "../../middleware/authenticate.js";
 import { demoRequestStatuses } from "../../db/schema/index.js";
 import { createDemoRequest, listDemoRequests, setDemoRequestStatus } from "../../services/demoRequests.js";
-import { AppError, unauthorized } from "../../utils/errors.js";
-
-/** Constant-time comparison of the shared intake key (hashed first so lengths always match). */
-function keyMatches(given: string, expected: string) {
-  const a = createHash("sha256").update(given).digest();
-  const b = createHash("sha256").update(expected).digest();
-  return timingSafeEqual(a, b);
-}
+import { assertIntakeKey } from "../../utils/intakeKey.js";
 
 const intakeBody = z.object({
   name: z.string().trim().min(1, "Name is required").max(120),
@@ -34,10 +25,7 @@ export async function demoRequestRoutes(app: FastifyInstance) {
    * Authenticated by the shared DEMO_INTAKE_KEY sent in the x-intake-key header.
    */
   app.post("/v1/intake/demo-requests", async (req, reply) => {
-    const expected = getEnv().DEMO_INTAKE_KEY.trim();
-    if (!expected) throw new AppError(503, "Demo request intake is not configured. Set DEMO_INTAKE_KEY.", "intake_not_configured");
-    const given = req.headers["x-intake-key"];
-    if (typeof given !== "string" || !keyMatches(given, expected)) throw unauthorized("Invalid intake key");
+    assertIntakeKey(req);
 
     const created = await createDemoRequest(intakeBody.parse(req.body));
     reply.status(201);
