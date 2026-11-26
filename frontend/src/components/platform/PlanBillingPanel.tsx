@@ -10,9 +10,9 @@ import { BILLING_STATUS_LABEL, type BillingStatus, type PlanKey } from "@/lib/ap
 import { resendLoginDetails, setCompanyPlan, type PlatformCompanyDetail } from "@/lib/api/platform";
 
 const PLAN_OPTIONS: { key: PlanKey; label: string }[] = [
-  { key: "starter", label: "Starter · £20/mo" },
-  { key: "growth", label: "Growth · £40/mo" },
-  { key: "enterprise", label: "Enterprise · £60/mo" },
+  { key: "starter", label: "Starter · £40/mo" },
+  { key: "growth", label: "Growth · £80/mo" },
+  { key: "enterprise", label: "Enterprise · £150/mo" },
 ];
 
 /** Platform → company detail: the company's plan, payment status and login-details resend. */

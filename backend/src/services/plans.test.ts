@@ -3,9 +3,9 @@ import { isPlanKey, listPlans, nearestAllowedCadence, planOf, PLANS } from "./pl
 
 describe("plans", () => {
   it("matches the agreed limits", () => {
-    expect(PLANS.starter).toMatchObject({ price: 20, researchUnits: 100, maxWorkspaces: 1, maxUsers: 4, monitorCadenceHours: [720] });
-    expect(PLANS.growth).toMatchObject({ price: 40, researchUnits: 250, maxWorkspaces: 3, maxUsers: 10, monitorCadenceHours: [168, 720] });
-    expect(PLANS.enterprise).toMatchObject({ price: 60, researchUnits: 500, maxWorkspaces: 6, maxUsers: 20, monitorCadenceHours: [24, 168] });
+    expect(PLANS.starter).toMatchObject({ price: 40, researchUnits: 100, maxWorkspaces: 1, maxUsers: 4, monitorCadenceHours: [720] });
+    expect(PLANS.growth).toMatchObject({ price: 80, researchUnits: 250, maxWorkspaces: 3, maxUsers: 10, monitorCadenceHours: [168, 720] });
+    expect(PLANS.enterprise).toMatchObject({ price: 150, researchUnits: 500, maxWorkspaces: 6, maxUsers: 20, monitorCadenceHours: [24, 168] });
   });
 
   it("falls back to Starter for unknown or missing plans", () => {
