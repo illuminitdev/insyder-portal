@@ -1,3 +1,4 @@
+import type { BillingStatus, PlanKey } from "./billing";
 import { api } from "./client";
 
 export type PlatformCompany = {
@@ -5,6 +6,11 @@ export type PlatformCompany = {
   name: string;
   researchQuotaMonthly: number;
   researchUsedMonthly: number;
+  plan: PlanKey;
+  planName: string;
+  price: number;
+  billingStatus: BillingStatus;
+  currentPeriodEnd: string | null;
   createdAt: string;
   workspaces: number;
   members: number;
@@ -15,7 +21,17 @@ export type PlatformCompany = {
 };
 
 export type PlatformOverview = {
-  totals: { companies: number; workspaces: number; members: number; accounts: number; crmConnected: number };
+  totals: {
+    companies: number;
+    workspaces: number;
+    members: number;
+    accounts: number;
+    crmConnected: number;
+    /** Monthly recurring revenue in GBP (£) from paid-up companies */
+    mrr: number;
+    byPlan: Record<PlanKey, number>;
+    unpaid: number;
+  };
   companies: PlatformCompany[];
 };
 
@@ -43,6 +59,13 @@ export type PlatformCompanyDetail = {
   researchQuotaMonthly: number;
   researchUsedMonthly: number;
   researchQuotaPeriodStart: string;
+  plan: PlanKey;
+  planName: string;
+  price: number;
+  billingStatus: BillingStatus;
+  currentPeriodEnd: string | null;
+  stripeCustomerId: string | null;
+  limits: { users: number; workspaces: number; researchUnits: number };
   /** Their own website from Settings → Offer & targeting, or null when not set */
   website: string | null;
   sellerCompany: string | null;
@@ -217,4 +240,17 @@ export function setDemoRequestStatus(id: string, status: DemoRequestStatus) {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
+}
+
+/** Set a company's plan and/or payment status by hand (e.g. invoiced outside Stripe). */
+export function setCompanyPlan(tenantId: string, body: { plan?: PlanKey; billingStatus?: BillingStatus }) {
+  return api<{ id: string; name: string; plan: PlanKey; billingStatus: BillingStatus }>(`/v1/platform/tenants/${tenantId}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+/** New temporary password for the company admin, emailed; returned here only when the email could not be sent. */
+export function resendLoginDetails(tenantId: string) {
+  return api<{ email: string; emailed: boolean; tempPassword?: string }>(`/v1/platform/tenants/${tenantId}/resend-login`, { method: "POST" });
 }

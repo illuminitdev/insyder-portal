@@ -16,6 +16,14 @@ export const tenants = pgTable("tenants", {
   researchQuotaPeriodStart: timestamp("research_quota_period_start", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  /** Plan key from services/plans.ts (starter | growth | enterprise) */
+  plan: text("plan").notNull().default("starter"),
+  /** unpaid | active | past_due | canceled. Research needs "active". */
+  billingStatus: text("billing_status").notNull().default("unpaid"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  /** End of the paid period Stripe reported last (next renewal date) */
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   /** Set when a platform admin deletes the company; its records stay for the audit trail */
   deletedAt: timestamp("deleted_at", { withTimezone: true }),

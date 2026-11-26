@@ -9,7 +9,11 @@ import { provisionTenant, provisionWorkspace } from "../../services/tenants.js";
 import { writeAudit } from "../../services/audit.js";
 import { notFound } from "../../utils/errors.js";
 import { approveAccessRequest, listAccessRequests, rejectAccessRequest } from "../../services/accessRequests.js";
-import { accessRequestStatuses, membershipRoles } from "../../db/schema/index.js";
+import { accessRequestStatuses, billingStatuses, membershipRoles } from "../../db/schema/index.js";
+import { isPlanKey, planKeys, planOf, setTenantPlan, type PlanKey } from "../../services/plans.js";
+import { resendLoginDetails } from "../../services/billing.js";
+
+const planEnum = z.enum(planKeys as [PlanKey, ...PlanKey[]]);
 
 /**
  * App-owner console. Returns counts only: a platform admin never reads a tenant's
@@ -26,6 +30,9 @@ export async function platformRoutes(app: FastifyInstance) {
           name: tenants.name,
           researchQuotaMonthly: tenants.researchQuotaMonthly,
           researchUsedMonthly: tenants.researchUsedMonthly,
+          plan: tenants.plan,
+          billingStatus: tenants.billingStatus,
+          currentPeriodEnd: tenants.currentPeriodEnd,
           createdAt: tenants.createdAt,
         })
         .from(tenants)
@@ -75,6 +82,8 @@ export async function platformRoutes(app: FastifyInstance) {
       for (const m of memberCounts) if (m.tenantId === t.id) roles[m.role] = Number(m.n);
       return {
         ...t,
+        planName: planOf(t.plan).name,
+        price: planOf(t.plan).price,
         workspaces: wsMap.get(t.id) ?? 0,
         members: Object.values(roles).reduce((a, b) => a + b, 0),
         membersByRole: roles,
@@ -93,6 +102,10 @@ export async function platformRoutes(app: FastifyInstance) {
         members: companies.reduce((a, c) => a + c.members, 0),
         accounts: companies.reduce((a, c) => a + c.accounts, 0),
         crmConnected: companies.filter((c) => c.crm).length,
+        // Monthly recurring revenue: plan prices of companies whose subscription is paid up
+        mrr: companies.filter((c) => c.billingStatus === "active").reduce((a, c) => a + c.price, 0),
+        byPlan: Object.fromEntries(planKeys.map((k) => [k, companies.filter((c) => planOf(c.plan).key === k).length])),
+        unpaid: companies.filter((c) => c.billingStatus !== "active").length,
       },
       companies,
     };
@@ -107,10 +120,15 @@ export async function platformRoutes(app: FastifyInstance) {
         adminEmail: z.string().trim().email("Enter a valid admin email"),
         adminName: z.string().trim().max(200).optional(),
         adminPassword: z.string().min(8, "Password must be at least 8 characters").max(200),
+        plan: planEnum.optional(),
+        // Companies set up by hand default to paid (e.g. invoiced outside Stripe)
+        billingStatus: z.enum(billingStatuses).optional().default("active"),
       })
       .parse(req.body);
 
     const created = await provisionTenant({
+      plan: body.plan,
+      billingStatus: body.billingStatus,
       tenantName: body.companyName,
       workspaceName: body.workspaceName || "Default Workspace",
       adminEmail: body.adminEmail,
@@ -127,6 +145,12 @@ export async function platformRoutes(app: FastifyInstance) {
       metadata: { adminEmail: created.email },
     });
     return { tenantId: created.tenantId, adminEmail: created.email };
+  });
+
+  /** New temporary password for the company's admin, emailed (or shown here if email isn't set up). */
+  app.post("/v1/platform/tenants/:tenantId/resend-login", { preHandler: requirePlatformAdmin }, async (req) => {
+    const { tenantId } = req.params as { tenantId: string };
+    return resendLoginDetails(tenantId, req.actor!.userId);
   });
 
   /** Reset a company's research usage for the current month back to 0 units. */
@@ -160,21 +184,45 @@ export async function platformRoutes(app: FastifyInstance) {
   app.patch("/v1/platform/tenants/:tenantId", { preHandler: requirePlatformAdmin }, async (req) => {
     const { tenantId } = req.params as { tenantId: string };
     const body = z
-      .object({ name: z.string().trim().min(1, "Company name is required").max(200) })
+      .object({
+        name: z.string().trim().min(1, "Company name is required").max(200).optional(),
+        plan: planEnum.optional(),
+        billingStatus: z.enum(billingStatuses).optional(),
+      })
       .parse(req.body);
     const db = getDb();
     const [before] = await db
-      .select({ name: tenants.name })
+      .select({ name: tenants.name, plan: tenants.plan })
       .from(tenants)
       .where(and(eq(tenants.id, tenantId), isNull(tenants.deletedAt)))
       .limit(1);
     if (!before) throw notFound("Company not found");
 
+    // Plan or payment status set by hand (e.g. a company paying by invoice). Stripe-billed
+    // companies are normally changed from Stripe; its next webhook would overwrite this.
+    if (body.plan || body.billingStatus) {
+      await setTenantPlan({
+        tenantId,
+        plan: body.plan ?? (isPlanKey(before.plan) ? before.plan : "starter"),
+        billingStatus: body.billingStatus,
+        actorUserId: req.actor!.userId,
+        source: "platform_admin",
+      });
+    }
+    if (!body.name || body.name === before.name) {
+      const [t] = await db
+        .select({ id: tenants.id, name: tenants.name, plan: tenants.plan, billingStatus: tenants.billingStatus })
+        .from(tenants)
+        .where(eq(tenants.id, tenantId))
+        .limit(1);
+      return t;
+    }
+
     const [after] = await db
       .update(tenants)
       .set({ name: body.name })
       .where(eq(tenants.id, tenantId))
-      .returning({ id: tenants.id, name: tenants.name });
+      .returning({ id: tenants.id, name: tenants.name, plan: tenants.plan, billingStatus: tenants.billingStatus });
     await writeAudit({
       tenantId,
       actorUserId: req.actor!.userId,
@@ -201,6 +249,10 @@ export async function platformRoutes(app: FastifyInstance) {
         researchQuotaMonthly: tenants.researchQuotaMonthly,
         researchUsedMonthly: tenants.researchUsedMonthly,
         researchQuotaPeriodStart: tenants.researchQuotaPeriodStart,
+        plan: tenants.plan,
+        billingStatus: tenants.billingStatus,
+        currentPeriodEnd: tenants.currentPeriodEnd,
+        stripeCustomerId: tenants.stripeCustomerId,
       })
       .from(tenants)
       .where(and(eq(tenants.id, tenantId), isNull(tenants.deletedAt)))
@@ -287,8 +339,12 @@ export async function platformRoutes(app: FastifyInstance) {
     const firstOffer = offerRows.find((o) => o.sellerWebsite) ?? offerRows.find((o) => o.sellerCompany);
     const firstCrm = crmRows[0];
 
+    const plan = planOf(tenant.plan);
     return {
       ...tenant,
+      planName: plan.name,
+      price: plan.price,
+      limits: { users: plan.maxUsers, workspaces: plan.maxWorkspaces, researchUnits: plan.researchUnits },
       website: firstOffer?.sellerWebsite || null,
       sellerCompany: firstOffer?.sellerCompany || null,
       users: Number(userCount[0]?.n ?? 0),

@@ -2,6 +2,7 @@ import { and, eq, lt, sql } from "drizzle-orm";
 import { getDb } from "../db/client.js";
 import { tenants } from "../db/schema/index.js";
 import { rateLimited } from "../utils/errors.js";
+import { assertBillingActive } from "./plans.js";
 
 /** Start a new monthly quota period when the UTC month has rolled over. */
 async function rollQuotaPeriod(tenantId: string) {
@@ -27,6 +28,8 @@ async function rollQuotaPeriod(tenantId: string) {
  * Atomically reserve research units. Fails if quota would be exceeded (gate 10).
  */
 export async function reserveResearchBudget(tenantId: string, units = 1) {
+  // Every research feature reserves units here, so this one check locks research for unpaid plans
+  await assertBillingActive(tenantId);
   await rollQuotaPeriod(tenantId);
   const db = getDb();
   const updated = await db

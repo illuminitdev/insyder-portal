@@ -132,6 +132,7 @@ export const PORTALS: Record<PortalKey, Portal> = {
         { href: "/settings/offer", label: "Offer & targeting" },
         { href: "/settings/suppressions", label: "Suppressions" },
         { href: "/settings/usage", label: "Usage" },
+        { href: "/settings/billing", label: "Plan & billing" },
         { href: "/settings/crm", label: "Connect to CRM" },
         { href: "/settings/branding", label: "Branding" },
       ]),

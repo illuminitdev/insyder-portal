@@ -7,6 +7,9 @@ import { ArrowRight, Building2, Lock, Mail, User } from "lucide-react";
 
 type Mode = "login" | "register" | "forgot";
 
+/** New customers choose a plan and pay on the marketing site's Pricing page; their login is emailed to them. */
+const PRICING_URL = `${(process.env.NEXT_PUBLIC_MARKETING_URL ?? "http://localhost:3001").replace(/\/+$/, "")}/pricing`;
+
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
     return (
@@ -228,9 +231,9 @@ export default function LoginPage() {
           ) : mode === "login" ? (
             <>
               Don&apos;t have an account?{" "}
-              <button type="button" className="auth-link text-[var(--brand)] font-semibold" onClick={() => switchMode("register")}>
+              <a className="auth-link text-[var(--brand)] font-semibold" href={PRICING_URL}>
                 Sign up
-              </button>
+              </a>
             </>
           ) : (
             <>

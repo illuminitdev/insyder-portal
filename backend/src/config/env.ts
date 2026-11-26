@@ -15,6 +15,18 @@ const envSchema = z.object({
   SECRETS_ENCRYPTION_KEY: z.string().optional().default(""),
   /** Shared key the marketing site (Insyder repo) sends to forward "Book a demo" requests. Empty: intake off. */
   DEMO_INTAKE_KEY: z.string().optional().default(""),
+  /** Stripe secret key (sk_test_… / sk_live_…). Empty: paid sign-up and billing are off. */
+  STRIPE_SECRET_KEY: z.string().optional().default(""),
+  /** Signing secret of the Stripe webhook endpoint (whsec_…), used to verify POST /v1/stripe/webhook */
+  STRIPE_WEBHOOK_SECRET: z.string().optional().default(""),
+  /** Resend API key for transactional email (login details). Empty: emails are logged, not sent. */
+  RESEND_API_KEY: z.string().optional().default(""),
+  /** Sender, e.g. "Insyder <hello@yourdomain.com>". Resend's test sender works until a domain is verified. */
+  EMAIL_FROM: z.string().optional().default("Insyder <onboarding@resend.dev>"),
+  /** Public URL of the marketing site: Stripe returns buyers here after checkout */
+  MARKETING_SITE_URL: z.string().optional().default("http://localhost:3001"),
+  /** Public URL of this portal's frontend, used for the login link in emails. Default: first FRONTEND_ORIGIN. */
+  PORTAL_PUBLIC_URL: z.string().optional().default(""),
   /** "true": the API process also runs the background job worker (no separate worker service) */
   RUN_WORKER_IN_API: z
     .string()
@@ -52,6 +64,17 @@ export function getDirectDatabaseUrl(): string {
 
 export function isExaConfigured(): boolean {
   return Boolean(getEnv().EXA_API_KEY?.trim());
+}
+
+export function isStripeConfigured(): boolean {
+  return Boolean(getEnv().STRIPE_SECRET_KEY?.trim());
+}
+
+/** Where people log in: PORTAL_PUBLIC_URL, else the first FRONTEND_ORIGIN. No trailing slash. */
+export function portalUrl(): string {
+  const env = getEnv();
+  const url = env.PORTAL_PUBLIC_URL.trim() || env.FRONTEND_ORIGIN.split(",")[0]!.trim();
+  return url.replace(/\/+$/, "");
 }
 
 export function isProduction(): boolean {

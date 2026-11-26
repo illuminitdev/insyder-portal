@@ -8,6 +8,8 @@ import { Field, FormError, humanize, inputClass } from "@/components/ui/Field";
 import { listPlaybooks, type PlaybookView } from "@/lib/api/playbooks";
 import { createMonitorFromAccounts, type Monitor } from "@/lib/api/monitors";
 import { listAccounts, type Account } from "@/lib/api/accounts";
+import { usePlan } from "@/hooks/usePlan";
+import { CADENCE_TEXT } from "@/lib/api/billing";
 
 export interface MonitorAccountItem {
   id: string;
@@ -37,7 +39,13 @@ export function MonitorAccountsModal({
   const [searchQuery, setSearchQuery] = useState("");
   const [playbooks, setPlaybooks] = useState<PlaybookView[]>([]);
   const [activeTemplateKey, setActiveTemplateKey] = useState<string>("infrastructure");
+  const { cadenceOptions, defaultCadence } = usePlan(workspaceId);
   const [selectedCadence, setSelectedCadence] = useState<number>(168);
+  // Once the plan loads, start on a frequency it includes
+  useEffect(() => {
+    if (!cadenceOptions.find((c) => c.hours === selectedCadence)?.allowed) setSelectedCadence(defaultCadence);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultCadence]);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -283,10 +291,12 @@ export function MonitorAccountsModal({
             disabled={creating}
             onChange={(e) => setSelectedCadence(Number(e.target.value))}
           >
-            <option value={24}>Daily (every 24 hours)</option>
-            <option value={168}>Weekly (every 7 days - recommended)</option>
-            <option value={336}>Every 2 weeks (every 14 days)</option>
-            <option value={720}>Monthly (every 30 days)</option>
+            {cadenceOptions.map((c) => (
+              <option key={c.hours} value={c.hours} disabled={!c.allowed}>
+                {CADENCE_TEXT[c.hours] ?? c.label}
+                {c.hint ? ` (${c.hint})` : ""}
+              </option>
+            ))}
           </select>
         </Field>
 

@@ -15,6 +15,8 @@ import { conflict, forbidden, notFound, validationError } from "../utils/errors.
 import { forgetMemberships } from "../middleware/requireMembership.js";
 import { grantMembership } from "./memberships.js";
 import { BUILT_IN_PLAYBOOKS } from "./playbooks.js";
+import { assertCanAddWorkspace, DEFAULT_PLAN, PLANS, type PlanKey } from "./plans.js";
+import type { BillingStatus } from "../db/schema/index.js";
 
 /** Versioned playbook templates (R1); defined with the rest of the playbook logic. */
 const PLAYBOOKS = BUILT_IN_PLAYBOOKS;
@@ -32,6 +34,14 @@ export async function provisionTenant(input: {
   adminPassword?: string;
   /** …an already-hashed one (an approved access request keeps the password its requester chose) */
   adminPasswordHash?: string;
+  /** Plan for the new company (default Starter); sets its monthly research units */
+  plan?: PlanKey;
+  /** Default "unpaid": research stays locked until the plan is paid */
+  billingStatus?: BillingStatus;
+  /** Temporary password (e.g. emailed after a paid sign-up): the admin must choose their own at first login */
+  mustChangePassword?: boolean;
+  stripeCustomerId?: string | null;
+  stripeSubscriptionId?: string | null;
 }) {
   if (!input.adminPassword && !input.adminPasswordHash) throw validationError("A password is required for the admin");
   const db = getDb();
@@ -43,13 +53,23 @@ export async function provisionTenant(input: {
   const workspaceId = newId("ws");
   const userId = newId("usr");
 
-  await db.insert(tenants).values({ id: tenantId, name: input.tenantName });
+  const plan = input.plan ?? DEFAULT_PLAN;
+  await db.insert(tenants).values({
+    id: tenantId,
+    name: input.tenantName,
+    plan,
+    researchQuotaMonthly: PLANS[plan].researchUnits,
+    billingStatus: input.billingStatus ?? "unpaid",
+    stripeCustomerId: input.stripeCustomerId ?? null,
+    stripeSubscriptionId: input.stripeSubscriptionId ?? null,
+  });
   await db.insert(workspaces).values({ id: workspaceId, tenantId, name: input.workspaceName });
   await db.insert(users).values({
     id: userId,
     email,
     name: input.adminName?.trim() || email.split("@")[0]!,
     passwordHash: input.adminPasswordHash ?? (await hashPassword(input.adminPassword!)),
+    mustChangePassword: input.mustChangePassword ?? false,
   });
   await db.insert(memberships).values({ id: newId("mem"), tenantId, workspaceId, userId, role: "tenant_admin" });
   await ensureWorkspaceDefaults(tenantId, workspaceId);
@@ -106,6 +126,7 @@ export async function provisionWorkspace(input: {
     .where(eq(tenants.id, input.tenantId))
     .limit(1);
   if (!tenant || tenant.deletedAt) throw notFound("Company not found");
+  await assertCanAddWorkspace(input.tenantId);
 
   const companyAdmins = input.adminEmail
     ? []

@@ -5,6 +5,7 @@ import { Building2, CalendarClock, CheckCircle2, Clock, MapPin, Radar, RefreshCw
 import type { Monitor } from "@/lib/api/monitors";
 import { humanize } from "@/components/ui/Field";
 import { formatDate } from "@/lib/utils/dates";
+import type { CadenceOption } from "@/hooks/usePlan";
 
 const CADENCES = [
   { hours: 24, label: "Daily" },
@@ -54,6 +55,7 @@ export function MonitorCard({
   onToggle,
   onCheck,
   onRemove,
+  cadenceOptions,
 }: {
   monitor: Monitor;
   checking: boolean;
@@ -63,6 +65,8 @@ export function MonitorCard({
   onToggle: (status: "active" | "paused") => void;
   onCheck: () => void;
   onRemove: () => void;
+  /** From usePlan: frequencies the company's plan includes; others show disabled */
+  cadenceOptions?: CadenceOption[];
 }) {
   const [confirmRemove, setConfirmRemove] = useState(false);
   const active = m.status === "active";
@@ -138,16 +142,19 @@ export function MonitorCard({
         <div className="flex items-center gap-2">
           <span className="text-[13px] font-semibold text-[var(--plum)]">Checks</span>
           <div className="inline-flex rounded-[12px] bg-[var(--lilac)] p-1" role="radiogroup" aria-label="How often to check">
-            {CADENCES.map((c) => {
+            {(cadenceOptions ?? CADENCES.map((c) => ({ ...c, allowed: true, hint: null }))).map((c) => {
               const on = m.cadenceHours === c.hours;
+              const locked = !c.allowed && !on;
               return (
                 <button
                   key={c.hours}
                   type="button"
                   role="radio"
                   aria-checked={on}
-                  onClick={() => !on && onCadence(c.hours)}
-                  className={`rounded-[9px] px-3.5 py-1.5 text-[13px] font-semibold transition ${
+                  disabled={locked}
+                  title={locked && c.hint ? `Available on the ${c.hint}` : undefined}
+                  onClick={() => !on && !locked && onCadence(c.hours)}
+                  className={`rounded-[9px] px-3.5 py-1.5 text-[13px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
                     on ? "bg-white text-[var(--brand-active)] shadow-[0_2px_8px_rgba(13,27,42,0.12)]" : "text-[var(--plum-muted)] hover:text-[var(--foreground)]"
                   }`}
                 >

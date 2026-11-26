@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Badge } from "@/components/ui/Badge";
+import { BILLING_STATUS_LABEL } from "@/lib/api/billing";
 import Link from "next/link";
 import { CrmChip } from "./CrmChip";
 import { Briefcase, CalendarDays, Shapes, RotateCcw, Users, type LucideIcon } from "lucide-react";
@@ -82,6 +84,18 @@ function CompanyCard({ c, onReset }: { c: PlatformCompany; onReset?: () => void 
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-2 text-xs">
+        <span className="font-semibold text-[var(--muted)]">Plan</span>
+        <span className="flex items-center gap-2">
+          <span className="font-semibold text-[var(--foreground)]">
+            {c.planName} · £{c.price}/mo
+          </span>
+          <Badge tone={c.billingStatus === "active" ? "green" : c.billingStatus === "unpaid" ? "amber" : "red"}>
+            {BILLING_STATUS_LABEL[c.billingStatus]}
+          </Badge>
+        </span>
+      </div>
+
+      <div className="mt-2 flex items-center justify-between gap-2 text-xs">
         <span className="font-semibold text-[var(--muted)]">CRM</span>
         <CrmChip crm={c.crm} />
       </div>
