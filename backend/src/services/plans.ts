@@ -12,7 +12,7 @@ import { writeAudit } from "./audit.js";
 export const PLANS = {
   starter: {
     name: "Starter",
-    price: 20,
+    price: 40,
     researchUnits: 100,
     maxWorkspaces: 1,
     maxUsers: 4,
@@ -20,7 +20,7 @@ export const PLANS = {
   },
   growth: {
     name: "Growth",
-    price: 40,
+    price: 80,
     researchUnits: 250,
     maxWorkspaces: 3,
     maxUsers: 10,
@@ -28,7 +28,7 @@ export const PLANS = {
   },
   enterprise: {
     name: "Enterprise",
-    price: 60,
+    price: 150,
     researchUnits: 500,
     maxWorkspaces: 6,
     maxUsers: 20,
