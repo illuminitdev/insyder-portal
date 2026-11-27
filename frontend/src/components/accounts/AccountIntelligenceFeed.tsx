@@ -30,7 +30,8 @@ import { formatMoney, OPPORTUNITY_STAGE_LABELS } from "@/lib/api/opportunities";
 import { humanize } from "@/components/ui/Field";
 import { usePagination } from "@/components/ui/Pagination";
 import { canQueueResearch } from "@/components/accounts/AccountTable";
-import { ago, initialsOf, Panel } from "@/components/accounts/AccountOverview";
+import { ago, Panel } from "@/components/accounts/AccountOverview";
+import { AccountLogo } from "@/components/accounts/AccountLogo";
 
 /** Priority 70+ (or accepted by sales) counts as Tier 1 */
 export const isTier1 = (a: Account) => (a.fitScore ?? 0) >= 70 || a.acceptanceState === "accepted";
@@ -337,7 +338,7 @@ export function AccountIntelligenceFeed({
     const status = statusLine(acc);
     const tier1Acc = isTier1(acc);
     const source = acc.source === "crm_import" ? `From ${crmName ?? "CRM"}` : (SOURCE_LABELS[acc.source] ?? humanize(acc.source));
-    const meta = [acc.domain, acc.country, `Updated ${ago(acc.updatedAt)}`].filter(Boolean);
+    const meta = [acc.country, `Updated ${ago(acc.updatedAt)}`].filter(Boolean);
     const tag = "rounded-md bg-[#f3f2fb] px-2 py-0.5 text-[12.5px] font-medium text-[var(--plum)]";
     const pbName = opts?.hidePlaybookBadge ? null : playbookName(acc.playbookTemplateKey);
     return (
@@ -359,9 +360,7 @@ export function AccountIntelligenceFeed({
               className="mt-6 h-4 w-4 shrink-0 cursor-pointer accent-[var(--brand)] disabled:cursor-not-allowed"
             />
           ) : null}
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-[var(--lilac)] to-[#e6e3f7] text-[17px] font-semibold text-[var(--foreground)]">
-            {initialsOf(acc.name)}
-          </span>
+          <AccountLogo name={acc.name} logoUrl={acc.logoUrl} tile="h-14 w-14 rounded-[14px] text-[17px]" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5">
               <Link
@@ -393,7 +392,23 @@ export function AccountIntelligenceFeed({
                 </span>
               ) : null}
             </div>
-            <p className="mt-1 truncate text-[14px] text-[var(--plum)]">{meta.join(" • ")}</p>
+            <p className="mt-1 truncate text-[14px] text-[var(--plum)]">
+              {acc.domain ? (
+                <>
+                  <a
+                    href={`https://${acc.domain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`Open ${acc.domain} in a new tab`}
+                    className="font-medium text-[var(--brand-active)] hover:underline"
+                  >
+                    {acc.domain}
+                  </a>
+                  {meta.length ? " • " : ""}
+                </>
+              ) : null}
+              {meta.join(" • ")}
+            </p>
           </div>
           <ScoreBadge score={acc.fitScore} />
         </div>

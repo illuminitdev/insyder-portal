@@ -251,8 +251,8 @@ function Watchlist({ workspaceId }: { workspaceId: string }) {
   return (
     <div className="space-y-6 min-w-0 w-full max-w-full">
       {/* Page header */}
-      <div className="flex min-w-0 flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-        <div className="max-w-3xl">
+      <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 max-w-3xl">
           <span className="inline-flex rounded-full bg-[var(--lilac)] px-3.5 py-1 text-[12.5px] font-bold uppercase tracking-[0.12em] text-[var(--brand-active)]">
             Active intelligence feed
           </span>

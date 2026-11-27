@@ -25,7 +25,7 @@ export default function PlatformSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Platform" title="Settings" description="Your platform admin account." />
+      <PageHeader title="Settings" description="Your platform admin account." />
 
       <Card>
         <h2 className="text-[15px]">Account</h2>

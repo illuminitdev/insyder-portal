@@ -292,7 +292,7 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
         </header>
         {/* With the menu closed the page uses the full width */}
         <main
-          className={`mx-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-9 lg:py-8 ${collapsed ? "max-w-[1500px] lg:max-w-none" : "max-w-[1500px]"}`}
+          className={`mx-auto px-4 py-5 sm:px-6 sm:pb-6 sm:pt-4 lg:px-9 lg:pb-8 lg:pt-5 ${collapsed ? "max-w-[1500px] lg:max-w-none" : "max-w-[1500px]"}`}
         >
           {children}
         </main>

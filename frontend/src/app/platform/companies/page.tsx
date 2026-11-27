@@ -77,7 +77,6 @@ export default function PlatformCompaniesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Platform"
         title="Companies"
         description="Each company is a separate tenant with its own workspaces, members and data."
         actions={

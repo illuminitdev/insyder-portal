@@ -1,5 +1,6 @@
 "use client";
 
+import { AccountLogo } from "@/components/accounts/AccountLogo";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -184,9 +185,11 @@ export function AccountHero({
       {/* Identity: logo, name, website, overview, status */}
       <div className={`flex min-w-0 gap-5 ${menu ? "pr-14" : ""}`}>
         <div className="relative shrink-0">
-          <span className="flex h-[68px] w-[68px] items-center justify-center rounded-[18px] bg-gradient-to-br from-[var(--lilac)] to-[#e8e6fb] text-[21px] font-semibold text-[var(--foreground)] shadow-[0_6px_18px_rgba(13,27,42,0.12)]">
-            {initialsOf(account.name)}
-          </span>
+          <AccountLogo
+            name={account.name}
+            logoUrl={account.logoUrl}
+            tile="h-[68px] w-[68px] rounded-[18px] text-[21px] shadow-[0_6px_18px_rgba(13,27,42,0.12)]"
+          />
           {account.acceptanceState === "accepted" ? (
             <span
               className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--badge-green-fg)] text-white ring-4 ring-white"

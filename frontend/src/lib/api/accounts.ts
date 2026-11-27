@@ -23,6 +23,8 @@ export type Account = {
   archivedAt?: string | null;
   /** 1-sentence summary of what the company is/does (company overview) */
   companySummary?: string | null;
+  /** Logo image address found on the company's website (null = none yet) */
+  logoUrl?: string | null;
   /** Playbook this account belongs to */
   playbookTemplateKey?: string | null;
 };

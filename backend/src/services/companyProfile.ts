@@ -10,6 +10,7 @@ import { normalizeDomain, normalizeWebsite } from "../utils/normalize.js";
 import { writeAudit } from "./audit.js";
 import { refundResearchBudget, reserveResearchBudget } from "./budget.js";
 import { createPlaybook, listPlaybooks } from "./playbooks.js";
+import { findSiteLogo } from "./siteLogo.js";
 
 /** Research units one website analysis uses */
 export const PROFILE_RUN_UNITS = 1;
@@ -118,11 +119,21 @@ export async function getProfileState(workspaceId: string, tenantId?: string): P
   }
   if (!row) return { website: null, status: "none", error: null, profile: null, updatedAt: null };
   const status = (row.profileStatus as ProfileState["status"] | null) ?? "none";
+  let profile = parseProfile(row.companyProfileJson);
+  // Profiles analysed before logos existed: look the logo up once (no research units), save it (null = none found)
+  if (profile && profile.logoUrl === undefined && status !== "running") {
+    const logoUrl = await findSiteLogo(row.sellerWebsite);
+    profile = { ...profile, logoUrl };
+    await getDb()
+      .update(offers)
+      .set({ companyProfileJson: JSON.stringify(profile) })
+      .where(and(eq(offers.id, row.id), eq(offers.companyProfileJson, row.companyProfileJson!)));
+  }
   return {
     website: row.sellerWebsite,
     status,
     error: row.profileError,
-    profile: parseProfile(row.companyProfileJson),
+    profile,
     updatedAt: row.profileUpdatedAt,
   };
 }
@@ -164,11 +175,12 @@ async function checkRunningProfile(row: NonNullable<Awaited<ReturnType<typeof of
     );
     return;
   }
+  const logoUrl = await findSiteLogo(row.sellerWebsite);
   await finish(
     {
       profileStatus: "completed",
       profileError: null,
-      companyProfileJson: JSON.stringify(result.profile),
+      companyProfileJson: JSON.stringify({ ...result.profile, logoUrl }),
       profileUpdatedAt: new Date(),
     },
     false,

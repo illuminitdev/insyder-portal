@@ -245,6 +245,8 @@ export type CompanyProfile = {
   customSignals: Array<{ label: string; description: string; why: string }>;
   discoveryQuestion: string;
   sources: Array<{ url: string; title: string | null }>;
+  /** Logo image address found on the website (null/absent = none) */
+  logoUrl?: string | null;
 };
 
 export type CompanyProfileState = {

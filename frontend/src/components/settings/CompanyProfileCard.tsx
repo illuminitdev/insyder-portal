@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Building2, ChevronDown, ChevronUp, ExternalLink, Globe, Loader2, RefreshCw } from "lucide-react";
+import { SiteLogo } from "@/components/common/SiteLogo";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -158,9 +159,7 @@ export function CompanyProfileCard({
     <Card className={firstTime && !profile ? "!border-[var(--brand)] shadow-[0_0_0_1px_var(--brand)]" : undefined}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-tint)] text-[var(--brand-text)]">
-            <Globe size={20} strokeWidth={1.75} aria-hidden />
-          </span>
+          <SiteLogo src={profile?.logoUrl} alt={profile?.companyName ? `${profile.companyName} logo` : ""} />
           <div>
             {firstTime && !profile ? <Badge tone="red">Start here</Badge> : null}
             <h2 className="mt-1 text-[17px] font-semibold">Your company profile</h2>
