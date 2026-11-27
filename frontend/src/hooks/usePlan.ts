@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SHOW_PLANS } from "@/lib/features";
 import { ALL_CADENCES, getPlans, getWorkspacePlan, type MonitorCadence, type PlanInfo, type WorkspacePlan } from "@/lib/api/billing";
 
 export type CadenceOption = MonitorCadence & { allowed: boolean; /** e.g. "Enterprise plan", for options the plan lacks */ hint: string | null };
@@ -14,7 +15,8 @@ export function usePlan(workspaceId: string | null | undefined) {
   const [plans, setPlans] = useState<PlanInfo[]>([]);
 
   useEffect(() => {
-    if (!workspaceId) return;
+    // Plans hidden for demos (see lib/features.ts): every frequency stays open
+    if (!workspaceId || !SHOW_PLANS) return;
     getWorkspacePlan(workspaceId).then(setPlan).catch(() => setPlan(null));
     getPlans()
       .then((r) => setPlans(r.plans))

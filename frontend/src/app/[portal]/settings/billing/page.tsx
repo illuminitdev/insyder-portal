@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { useSearchParams } from "next/navigation";
+import { notFound, useSearchParams } from "next/navigation";
+import { SHOW_PLANS } from "@/lib/features";
 import { Check, CreditCard, ExternalLink } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { RequireCap } from "@/components/common/RequireCap";
@@ -408,5 +409,7 @@ function BillingView({ workspaceId }: { workspaceId: string }) {
 }
 
 export default function BillingPage() {
+  // Hidden for demos (see lib/features.ts)
+  if (!SHOW_PLANS) notFound();
   return <RequireCap cap="manage_membership">{(workspaceId) => <BillingView workspaceId={workspaceId} />}</RequireCap>;
 }

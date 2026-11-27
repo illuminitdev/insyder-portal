@@ -22,6 +22,7 @@ import { ErrorState } from "@/components/common/ErrorState";
 import { Button } from "@/components/ui/Button";
 import { CrmChip } from "@/components/platform/CrmChip";
 import { PlanBillingPanel } from "@/components/platform/PlanBillingPanel";
+import { SHOW_PLANS } from "@/lib/features";
 import { initials, toneFor } from "@/components/platform/CompanyCards";
 import { DeleteCompanyModal, EditCompanyModal } from "@/components/platform/CompanyModals";
 import { ROLE_LABELS, ROLE_ORDER } from "@/lib/auth/capabilities";
@@ -154,7 +155,7 @@ export default function PlatformCompanyDetailPage() {
         <Tile Icon={Briefcase} label="Accounts" value={c.accounts} tone="bg-emerald-50 text-emerald-600" />
       </div>
 
-      <PlanBillingPanel key={`${c.plan}-${c.billingStatus}`} c={c} onChanged={() => void load()} />
+      {SHOW_PLANS && <PlanBillingPanel key={`${c.plan}-${c.billingStatus}`} c={c} onChanged={() => void load()} />}
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Usage */}

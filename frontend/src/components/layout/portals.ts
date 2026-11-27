@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Capability } from "../../lib/auth/capabilities";
+import { SHOW_PLANS } from "../../lib/features";
 
 type Can = (cap: Capability) => boolean;
 
@@ -132,7 +133,8 @@ export const PORTALS: Record<PortalKey, Portal> = {
         { href: "/settings/offer", label: "Offer & targeting" },
         { href: "/settings/suppressions", label: "Suppressions" },
         { href: "/settings/usage", label: "Usage" },
-        { href: "/settings/billing", label: "Plan & billing" },
+        // Hidden for demos (see lib/features.ts)
+        ...(SHOW_PLANS ? [{ href: "/settings/billing", label: "Plan & billing" }] : []),
         { href: "/settings/crm", label: "Connect to CRM" },
         { href: "/settings/branding", label: "Branding" },
       ]),
