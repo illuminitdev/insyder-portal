@@ -960,6 +960,24 @@ export class ExaResearchProvider implements ResearchProvider {
     };
   }
 
+  /** Company search: homepages of companies with this name (category "company"), best first. */
+  async findCompanyWebsites(company: { name: string; country?: string | null }): Promise<Array<{ url: string; title: string | null }>> {
+    try {
+      const res = (await withTimeout(
+        this.client().search(`${company.name}${company.country ? ` (${company.country})` : ""} official website`, {
+          numResults: 5,
+          category: "company",
+        } as unknown as Parameters<InstanceType<typeof Exa>["search"]>[1]),
+        REQUEST_TIMEOUT_MS,
+      )) as { results?: Array<{ url?: unknown; title?: unknown }> };
+      return (res.results ?? [])
+        .filter((r): r is { url: string; title?: unknown } => typeof r.url === "string" && /^https?:\/\//i.test(r.url))
+        .map((r) => ({ url: r.url, title: typeof r.title === "string" ? r.title.slice(0, 300) : null }));
+    } catch (err) {
+      throw normalizeExaError(err);
+    }
+  }
+
   /** People search: current staff at the company, IT/technology decision makers first. */
   async findContacts(company: { name: string; domain: string | null }, roleHint?: string): Promise<LeadContact[]> {
     const role = roleHint?.trim() || "CTO, CIO, Head of IT or Head of Infrastructure";

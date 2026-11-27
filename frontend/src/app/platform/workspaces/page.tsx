@@ -56,7 +56,6 @@ export default function PlatformWorkspacesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Platform"
         title="Workspaces"
         description="Team areas inside each company. A new workspace starts empty: no accounts, evidence or tasks, and its own offer, members and settings."
         actions={

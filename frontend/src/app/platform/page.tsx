@@ -154,7 +154,6 @@ export default function PlatformOverviewPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Platform"
         title="Overview"
         description="Every customer company on Insyder, as counts only. Their accounts, evidence and briefs stay private to each company."
         actions={

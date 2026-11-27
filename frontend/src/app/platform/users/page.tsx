@@ -201,7 +201,6 @@ export default function PlatformUsersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Platform"
         title="Users"
         description="How many people each company has, by role and workspace. Only tenant admins are named; everyone else stays a count."
       />

@@ -31,6 +31,7 @@ import { persistNormalizedEvidence } from "../../services/evidence.js";
 import { activeSuppressionSet, isSuppressed } from "../../services/suppressions.js";
 import { newId } from "../../utils/ids.js";
 import { companyDomain, companyNameKey, normalizeDomain } from "../../utils/normalize.js";
+import { findCompanyDomain, looksLikeNotACompany } from "../../services/companyWebsite.js";
 import { redactString } from "../../utils/redact.js";
 
 type FetchedResult = { stage: "fetched"; providerRunId: string; items: NormalizedEvidenceItem[] };
@@ -230,10 +231,19 @@ export async function handleResearchRun(
         const runPlaybookKey = await playbookKeyOfRun(run);
         if (runPlaybookKey) accountUpdates.playbookTemplateKey = runPlaybookKey;
       }
+      // No website yet: look up the company's own website by name (the logo and overview use it)
+      let acctDomain = acct?.domain ?? null;
+      if (acct && !acctDomain) {
+        const found = await findCompanyDomain(acct.name, acct.country);
+        if (found && (await attachFoundDomain(run, acct.id, found))) {
+          acctDomain = found;
+          accountUpdates.domain = found;
+        }
+      }
       // "Company overview": one sentence on what the company does, written once (a summary someone
       // typed in or imported is kept)
       if (acct && !acct.companySummary) {
-        const overview = await companyOverview(acct.name, acct.domain);
+        const overview = await companyOverview(acct.name, acctDomain);
         if (overview) accountUpdates.companySummary = overview;
       }
       await db.update(accounts).set(accountUpdates).where(eq(accounts.id, run.accountId));
@@ -388,11 +398,16 @@ async function accountsFromSignals(
   // New accounts join the playbook the run was made with
   const runPlaybookKey = await playbookKeyOfRun(run);
 
+  let skippedNotCompany = 0;
   for (const item of items) {
-    const name = item.subject?.companyName?.trim() || null;
+    const rawName = item.subject?.companyName?.trim() || null;
+    // A tender, procurement notice or job-ad title is not a company name
+    const notCompany = Boolean(rawName && looksLikeNotACompany(rawName));
+    const name = notCompany ? null : rawName;
     const domain = companyDomain(item.subject?.companyWebsite);
     if (!name && !domain) {
-      unmatched++;
+      if (notCompany) skippedNotCompany++;
+      else unmatched++;
       continue;
     }
     if (domain && suppressed.has(domain)) {
@@ -468,6 +483,21 @@ async function accountsFromSignals(
     groups.set(target.id, g);
   }
 
+  // Leads named only by an article, job post or tender have no website: look up their own site by name
+  const noDomain = [...groups.values()].filter((g) => !g.domain).slice(0, WEBSITE_LOOKUP_LIMIT);
+  for (let i = 0; i < noDomain.length; i += WEBSITE_LOOKUP_PARALLEL) {
+    await Promise.all(
+      noDomain.slice(i, i + WEBSITE_LOOKUP_PARALLEL).map(async (g) => {
+        const found = await findCompanyDomain(g.name, g.country);
+        if (!found || suppressed.has(found) || byDomain.has(found)) return;
+        if (await attachFoundDomain(run, g.id, found)) {
+          g.domain = found;
+          byDomain.set(found, g);
+        }
+      }),
+    );
+  }
+
   const [peopleByAccount, overviewByAccount] = await Promise.all([
     findLeadContacts([...groups.values()]),
     // Company overviews only for leads that don't have one yet
@@ -528,10 +558,39 @@ async function accountsFromSignals(
   return {
     rows,
     unmatched,
+    skippedNotCompany,
     skippedSuppressed,
     skippedDismissed,
     noResults: items.length === 0,
   };
+}
+
+const WEBSITE_LOOKUP_LIMIT = 25;
+const WEBSITE_LOOKUP_PARALLEL = 5;
+
+/**
+ * Save a website found by name on an account that has none. Skipped (false) when another live
+ * account in the workspace already has that domain, so two accounts never share one website.
+ */
+async function attachFoundDomain(run: typeof researchRuns.$inferSelect, accountId: string, domain: string): Promise<boolean> {
+  const db = getDb();
+  const [taken] = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(and(eq(accounts.workspaceId, run.workspaceId), eq(accounts.domain, domain), isNull(accounts.mergedIntoId)))
+    .limit(1);
+  if (taken && taken.id !== accountId) return false;
+  const updated = await db
+    .update(accounts)
+    .set({ domain })
+    .where(and(eq(accounts.id, accountId), isNull(accounts.domain)))
+    .returning({ id: accounts.id });
+  if (!updated.length) return false;
+  await db
+    .insert(accountIdentities)
+    .values({ id: newId("aid"), tenantId: run.tenantId, workspaceId: run.workspaceId, accountId, kind: "domain", value: domain })
+    .onConflictDoNothing();
+  return true;
 }
 
 /** Template key of the playbook a run was made with (null when none) */

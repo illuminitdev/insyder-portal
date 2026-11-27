@@ -35,6 +35,7 @@ import { listPendingMergeCandidates, resolveMergeCandidate } from "../../service
 import { evidenceFreshness } from "../../services/evidence.js";
 import { getQualificationFacts } from "../../services/qualification.js";
 import { writeAudit } from "../../services/audit.js";
+import { kickAccountLogos, needsLogoCheck, visibleLogo } from "../../services/accountLogos.js";
 
 export async function accountRoutes(app: FastifyInstance) {
   app.get(
@@ -104,6 +105,10 @@ export async function accountRoutes(app: FastifyInstance) {
           if (!r.playbookTemplateKey) r.playbookTemplateKey = playbookByAccount.get(r.id) ?? null;
         }
       }
+
+      // Logos are looked up in the background; this list shows them from the next load on
+      if (rows.some(needsLogoCheck)) kickAccountLogos(workspaceId);
+      for (const r of rows) r.logoUrl = visibleLogo(r);
 
       return { accounts: rows };
     },
@@ -385,6 +390,10 @@ export async function accountRoutes(app: FastifyInstance) {
           .orderBy(desc(acceptanceDecisions.createdAt)),
       ]);
       const windowDays = offer?.eventWindowDays ?? 90;
+      if (account) {
+        if (needsLogoCheck(account)) kickAccountLogos(account.workspaceId);
+        account.logoUrl = visibleLogo(account);
+      }
       const [facts, owner] = await Promise.all([
         qual ? getQualificationFacts(qual.id).then((f) => f.current) : Promise.resolve([]),
         account?.ownerUserId

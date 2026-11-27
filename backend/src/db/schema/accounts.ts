@@ -59,6 +59,11 @@ export const accounts = pgTable(
     companySummary: text("company_summary"),
     /** Playbook template key this account belongs to */
     playbookTemplateKey: text("playbook_template_key"),
+    /** Logo image address found on the company's website (only the URL; nothing is stored) */
+    logoUrl: text("logo_url"),
+    /** The domain the logo was looked up for: a different domain means look again */
+    logoDomain: text("logo_domain"),
+    logoCheckedAt: timestamp("logo_checked_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

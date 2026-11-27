@@ -266,7 +266,6 @@ export default function AccessRequestsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Platform"
         title="Access requests"
         description="People who used “Create account” on the login page. Nobody gets in until you approve them."
       />

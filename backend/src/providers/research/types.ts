@@ -109,6 +109,11 @@ export interface ResearchProvider {
   reportUsage(discovery: NormalizedDiscovery, reservedUnits: number): Promise<Usage>;
   /** Optional: cited answer to a question (Exa Answer) */
   answer?(question: string, opts?: { userLocation?: string }): Promise<ProviderAnswer>;
+  /**
+   * Optional: candidate homepages for a company found by name (Exa company search), best first.
+   * The caller checks that a candidate really belongs to the company.
+   */
+  findCompanyWebsites?(company: { name: string; country?: string | null }): Promise<Array<{ url: string; title: string | null }>>;
   /** Optional: public profiles of people currently working at a company (decision makers first) */
   findContacts?(company: { name: string; domain: string | null }, roleHint?: string): Promise<LeadContact[]>;
   /**
@@ -277,6 +282,8 @@ export type CompanyProfile = {
   customSignals: Array<{ label: string; description: string; why: string }>;
   discoveryQuestion: string;
   sources: Array<{ url: string; title: string | null }>;
+  /** Logo image address found on the website (undefined = not looked up yet, null = none found) */
+  logoUrl?: string | null;
 };
 
 export type ProfileAgentResult =

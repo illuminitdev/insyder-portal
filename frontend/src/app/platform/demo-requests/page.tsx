@@ -85,7 +85,6 @@ export default function DemoRequestsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Platform"
         title="Demo requests"
         description="People who filled in “Book a demo” on the Insyder website. Reach out, then mark each one as contacted or closed."
       />
