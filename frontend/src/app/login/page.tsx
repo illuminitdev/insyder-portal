@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { login, requestAccess } from "@/lib/auth/session";
 import { ArrowRight, Building2, Lock, Mail, User } from "lucide-react";
+import { SHOW_PLANS } from "@/lib/features";
 
 type Mode = "login" | "register" | "forgot";
 
-/** New customers choose a plan and pay on the marketing site's Pricing page; their login is emailed to them. */
-const PRICING_URL = `${(process.env.NEXT_PUBLIC_MARKETING_URL ?? "http://localhost:3001").replace(/\/+$/, "")}/pricing`;
+/** New customers choose a plan and pay on the marketing site's Pricing page; their login is emailed to them.
+ *  While plans are hidden for demos (see lib/features.ts), "Sign up" goes to Book a demo instead. */
+const PRICING_URL = `${(process.env.NEXT_PUBLIC_MARKETING_URL ?? "http://localhost:3001").replace(/\/+$/, "")}/${SHOW_PLANS ? "pricing" : "demo"}`;
 
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {

@@ -19,6 +19,11 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional().default(""),
   /** Signing secret of the Stripe webhook endpoint (whsec_…), used to verify POST /v1/stripe/webhook */
   STRIPE_WEBHOOK_SECRET: z.string().optional().default(""),
+  /** "true": plan limits and the paid-plan check are enforced. Off (default) while plans are hidden for demos. */
+  PLANS_ENFORCED: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim().toLowerCase() === "true"),
   /** Resend API key for transactional email (login details). Empty: emails are logged, not sent. */
   RESEND_API_KEY: z.string().optional().default(""),
   /** Sender, e.g. "Insyder <hello@yourdomain.com>". Resend's test sender works until a domain is verified. */
@@ -64,6 +69,11 @@ export function getDirectDatabaseUrl(): string {
 
 export function isExaConfigured(): boolean {
   return Boolean(getEnv().EXA_API_KEY?.trim());
+}
+
+/** Plans hidden for demos: when false, plan limits and the paid-plan check are skipped (nothing is deleted). */
+export function plansEnforced(): boolean {
+  return getEnv().PLANS_ENFORCED;
 }
 
 export function isStripeConfigured(): boolean {

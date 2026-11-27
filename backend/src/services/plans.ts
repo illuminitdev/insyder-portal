@@ -3,6 +3,7 @@ import { getDb } from "../db/client.js";
 import { memberships, monitors, tenants, users, workspaces, type BillingStatus } from "../db/schema/index.js";
 import { AppError, notFound, validationError } from "../utils/errors.js";
 import { writeAudit } from "./audit.js";
+import { plansEnforced } from "../config/env.js";
 
 /**
  * The plans. Change prices and limits HERE (and on the marketing site's Plans page,
@@ -117,6 +118,7 @@ export async function countTenantWorkspaces(tenantId: string) {
 }
 
 export async function assertCanAddWorkspace(tenantId: string) {
+  if (!plansEnforced()) return; // plans hidden for demos
   const plan = await getTenantPlan(tenantId);
   const used = await countTenantWorkspaces(tenantId);
   if (used >= plan.maxWorkspaces) {
@@ -128,6 +130,7 @@ export async function assertCanAddWorkspace(tenantId: string) {
 
 /** Adding `email` to the company must not go over the plan's users. Someone already in the company doesn't count again. */
 export async function assertCanAddUser(tenantId: string, email: string) {
+  if (!plansEnforced()) return; // plans hidden for demos
   const db = getDb();
   const [existing] = await db
     .select({ id: memberships.id })
@@ -144,6 +147,7 @@ export async function assertCanAddUser(tenantId: string, email: string) {
 }
 
 export async function assertCadenceAllowed(tenantId: string, hours: number) {
+  if (!plansEnforced()) return; // plans hidden for demos
   const plan = await getTenantPlan(tenantId);
   if (!(plan.monitorCadenceHours as readonly number[]).includes(hours)) {
     const label = CADENCE_LABELS[hours] ?? `Every ${hours} hours`;
@@ -156,6 +160,7 @@ export async function assertCadenceAllowed(tenantId: string, hours: number) {
 
 /** The cadence a new monitor gets when none is chosen: weekly if the plan has it, else its first one. */
 export async function defaultCadence(tenantId: string) {
+  if (!plansEnforced()) return 168; // plans hidden for demos: weekly
   const plan = await getTenantPlan(tenantId);
   const allowed = plan.monitorCadenceHours as readonly number[];
   return allowed.includes(168) ? 168 : allowed[0]!;
@@ -163,6 +168,7 @@ export async function defaultCadence(tenantId: string) {
 
 /** Research spends money, so it needs a paid (active) subscription. */
 export async function assertBillingActive(tenantId: string) {
+  if (!plansEnforced()) return; // plans hidden for demos
   const plan = await getTenantPlan(tenantId);
   if (plan.billingStatus !== "active") {
     const why =
